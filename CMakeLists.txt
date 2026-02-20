@@ -11,4 +11,9 @@ add_executable(dscript main.cpp
         runtime/value.cpp
         runtime/value.h
         runtime/obj.h
-        runtime/objs.h)
+        runtime/objs.h
+        parsing/stmt.h
+        parsing/a_visitor.h
+        parsing/expr.h
+        parsing/parser.cpp
+        parsing/parser.h)
