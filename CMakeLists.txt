@@ -9,4 +9,6 @@ add_executable(dscript main.cpp
         lexing/lexer.h
         lexing/lexer.cpp
         runtime/value.cpp
-        runtime/value.h)
+        runtime/value.h
+        runtime/obj.h
+        runtime/objs.h)
