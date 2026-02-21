@@ -1,0 +1,24 @@
+fn divide(a, b) {
+    if b is 0 then {
+        return nil, error('something bad happened! divide by zero');
+    }
+
+    return a / b, nil;
+}
+
+fn main() {
+    let ok, err = divide(20, 4);
+    log('ok result:');
+    log(ok);
+    log('ok err should be none:');
+    log(err);
+
+    let bad, bad_err = divide(20, 0);
+    log('bad result should be none:');
+    log(bad);
+    log('bad err should go to stderr:');
+    log(bad_err);
+
+    log('error message via index:');
+    log(bad_err['message']);
+}

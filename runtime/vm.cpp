@@ -26,8 +26,24 @@ static const char *kind_to_string(const RuntimeErrorKind kind) {
 	}
 }
 
+static Value native_error(const std::vector<Value> &args) {
+	if (args.size() != 1) {
+		throw ArityError("error() expects exactly one argument.");
+	}
+
+	const Value &message = args[0];
+	if (message.type != ValueType::Object || message.as.object->get_type() != ObjType::String) {
+		throw TypeError("error() argument must be a string.");
+	}
+
+	const auto message_obj = std::static_pointer_cast<ObjString>(message.as.object);
+	return Value::object(std::make_shared<ObjError>(message_obj->chars));
+}
+
 Vm::Vm()
-	: globals(std::make_shared<Environment>()), environment(globals) {}
+	: globals(std::make_shared<Environment>()), environment(globals) {
+	globals->define("error", Value::object(std::make_shared<ObjNative>(1, native_error)));
+}
 
 void Vm::interpret(const std::vector<StmtPtr> &statements) {
 	try {
@@ -189,27 +205,81 @@ Value Vm::visit_if_stmt(IfStmt *stmt) {
 
 Value Vm::visit_log_stmt(LogStmt *stmt) {
 	const Value value = evaluate(stmt->expression);
-	value.print(std::cout);
-	std::cout << '\n';
+
+    std::ostream &os = (value.type == ValueType::Object && value.as.object->get_type() == ObjType::Error) ? std::cerr : std::cout;
+	value.print(os);
+    os << std::endl;
+
 	return Value::none();
 }
 
 Value Vm::visit_return_stmt(ReturnStmt *stmt) {
 	Value value = Value::none();
-	if (stmt->value != nullptr) {
-		value = evaluate(stmt->value);
+	if (stmt->values.size() == 1) {
+		value = evaluate(stmt->values[0]);
+	} else if (stmt->values.size() > 1) {
+		std::vector<Value> values;
+		values.reserve(stmt->values.size());
+		for (const ExprPtr &expr : stmt->values) {
+			values.push_back(evaluate(expr));
+		}
+		value = Value::object(std::make_shared<List>(values));
 	}
 
 	throw Return(value);
 }
 
 Value Vm::visit_let_stmt(LetStmt *stmt) {
-	Value value = Value::none();
-	if (stmt->init != nullptr) {
-		value = evaluate(stmt->init);
+	if (stmt->names.empty()) {
+		return Value::none();
 	}
 
-	environment->define(stmt->name.literal.lexeme, value);
+	if (stmt->names.size() == 1) {
+		Value value = Value::none();
+		if (!stmt->inits.empty()) {
+			if (stmt->inits.size() != 1) {
+				throw ArityError("Single-variable let expects at most one initializer.", stmt->keyword.file_pos);
+			}
+			value = evaluate(stmt->inits[0]);
+		}
+
+		environment->define(stmt->names[0].literal.lexeme, value);
+		return Value::none();
+	}
+
+	std::vector<Value> resolved_values;
+	resolved_values.reserve(stmt->names.size());
+
+	if (stmt->inits.empty()) {
+		for (std::size_t i = 0; i < stmt->names.size(); ++i) {
+			resolved_values.push_back(Value::none());
+		}
+	} else if (stmt->inits.size() == 1) {
+		const Value single = evaluate(stmt->inits[0]);
+		if (single.type != ValueType::Object || single.as.object->get_type() != ObjType::List) {
+			throw TypeError("Multi-variable let with one initializer expects a list value.", stmt->keyword.file_pos);
+		}
+
+		const auto list = std::static_pointer_cast<List>(single.as.object);
+		if (list->elements.size() != stmt->names.size()) {
+			throw ArityError("Destructuring count mismatch in let declaration.", stmt->keyword.file_pos);
+		}
+
+		resolved_values = list->elements;
+	} else {
+		if (stmt->inits.size() != stmt->names.size()) {
+			throw ArityError("Initializer count mismatch in let declaration.", stmt->keyword.file_pos);
+		}
+
+		for (const ExprPtr &init : stmt->inits) {
+			resolved_values.push_back(evaluate(init));
+		}
+	}
+
+	for (std::size_t i = 0; i < stmt->names.size(); ++i) {
+		environment->define(stmt->names[i].literal.lexeme, resolved_values[i]);
+	}
+
 	return Value::none();
 }
 

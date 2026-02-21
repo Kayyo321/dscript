@@ -287,3 +287,32 @@ Value List::index(const Value &key) {
 
     return elements[index];
 }
+
+ObjError::ObjError(std::string message)
+    : Obj(ObjType::Error), message(std::move(message)) {}
+
+bool ObjError::operator==(const Obj &other) {
+    if (other.get_type() != ObjType::Error) {
+        return false;
+    }
+
+    const auto &error = static_cast<const ObjError &>(other);
+    return message == error.message;
+}
+
+void ObjError::print(std::ostream &os) {
+    os << "error(" << message << ")";
+}
+
+Value ObjError::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw TypeError("Error index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    if (key_string->chars == "message") {
+        return Value::object(std::make_shared<ObjString>(message));
+    }
+
+    throw IndexError("Unknown error index key '" + key_string->chars + "'.");
+}

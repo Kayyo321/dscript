@@ -7,7 +7,7 @@ fn main() {
         i = i + 1;
     } while i < 3;
 
-    if i == 3 then log('if without braces works');
+    if i is 3 then log('if without braces works');
 
     let j = 0;
     while j < 2 do j = j + 1;

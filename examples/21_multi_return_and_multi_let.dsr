@@ -1,0 +1,35 @@
+fn pair() {
+    return 10, 20;
+}
+
+fn stats(base) {
+    return base + 1, base + 2, base + 3;
+}
+
+fn main() {
+    log('== multi let + multi return ==');
+
+    let x, y = 10, 20;
+    log('x:');
+    log(x);
+    log('y:');
+    log(y);
+
+    let a, b = pair();
+    log('a from pair():');
+    log(a);
+    log('b from pair():');
+    log(b);
+
+    let i, j, k = stats(5);
+    log('i,j,k from stats(5):');
+    log(i);
+    log(j);
+    log(k);
+
+    let m, n;
+    log('m defaults to none:');
+    log(m);
+    log('n defaults to none:');
+    log(n);
+}

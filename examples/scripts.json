@@ -18,5 +18,7 @@
   "examples/17_error_showcase.dsr",
   "examples/18_def_keyword_showcase.dsr",
   "examples/19_loop_finally_semantics.dsr",
-  "examples/20_compound_and_incdec_ops.dsr"
+  "examples/20_compound_and_incdec_ops.dsr",
+  "examples/21_multi_return_and_multi_let.dsr",
+  "examples/22_error_object_and_stderr.dsr"
 ]

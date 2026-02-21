@@ -2,14 +2,14 @@ def maybe_named(value) (name: $of_a_block) {
     log('== named blocks and none ==');
     log(value);
 
-    if name == none then {
-        log('name == none');
+    if name is none then {
+        log('name is none');
     } else {
         name();
     }
 
-    if $of_a_block == none then {
-        log('$of_a_block == none');
+    if $of_a_block is none then {
+        log('$of_a_block is none');
     } else {
         $of_a_block();
     }

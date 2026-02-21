@@ -99,20 +99,32 @@ Value Resolver::visit_return_stmt(ReturnStmt *stmt) {
         error_at(stmt->keyword, "Cannot return from top-level code.");
     }
 
-    if (stmt->value != nullptr) {
+    if (!stmt->values.empty()) {
         if (current_function == FunctionType::Initializer) {
             error_at(stmt->keyword, "Cannot return a value from an initializer.");
         }
-        resolve(stmt->value);
+
+        for (const ExprPtr &value : stmt->values) {
+            resolve(value);
+        }
     }
 
     return Value::none();
 }
 
 Value Resolver::visit_let_stmt(LetStmt *stmt) {
-    declare(stmt->name);
-    resolve(stmt->init);
-    define(stmt->name);
+    for (const Token &name : stmt->names) {
+        declare(name);
+    }
+
+    for (const ExprPtr &init : stmt->inits) {
+        resolve(init);
+    }
+
+    for (const Token &name : stmt->names) {
+        define(name);
+    }
+
     return Value::none();
 }
 

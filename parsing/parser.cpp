@@ -394,23 +394,44 @@ private:
 
     StmtPtr parse_let_stmt() {
         const Token keyword = previous();
-        Token name = consume_or_throw(TokenType::Identifier, "Expected variable name after 'let'.");
-        ExprPtr init = nullptr;
-        if (match(TokenType::Equals)) {
-            init = parse_expression();
+
+        std::vector<Token> names;
+        names.push_back(consume_or_throw(TokenType::Identifier, "Expected variable name after 'let'."));
+        while (match(TokenType::Comma)) {
+            names.push_back(consume_or_throw(TokenType::Identifier, "Expected variable name after ','."));
         }
+
+        std::vector<ExprPtr> inits;
+        if (match(TokenType::Equals)) {
+            inits.push_back(parse_expression());
+            while (match(TokenType::Comma)) {
+                inits.push_back(parse_expression());
+            }
+        }
+
         match(TokenType::Semicolon);
-        return std::make_shared<LetStmt>(keyword, name, init);
+
+        if (names.size() == 1) {
+            ExprPtr init = inits.empty() ? nullptr : inits[0];
+            return std::make_shared<LetStmt>(keyword, names[0], init);
+        }
+
+        return std::make_shared<LetStmt>(keyword, names, inits);
     }
 
     StmtPtr parse_return_stmt() {
         const Token keyword = previous();
-        ExprPtr value = nullptr;
+
+        std::vector<ExprPtr> values;
         if (!check(TokenType::Semicolon)) {
-            value = parse_expression();
+            values.push_back(parse_expression());
+            while (match(TokenType::Comma)) {
+                values.push_back(parse_expression());
+            }
         }
+
         match(TokenType::Semicolon);
-        return std::make_shared<ReturnStmt>(keyword, value);
+        return std::make_shared<ReturnStmt>(keyword, values);
     }
 
     StmtPtr parse_expression_stmt() {
@@ -707,6 +728,10 @@ private:
             }
 
             if (previous().literal.lexeme == "none") {
+                return std::make_shared<LiteralExpr>(Value::none());
+            }
+
+            if (previous().literal.lexeme == "nil") {
                 return std::make_shared<LiteralExpr>(Value::none());
             }
 

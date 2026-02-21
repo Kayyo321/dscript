@@ -131,4 +131,15 @@ public:
     std::vector<Value> elements;
 };
 
+class ObjError : public Obj {
+public:
+    explicit ObjError(std::string message);
+
+    bool operator==(const Obj &other) override;
+    void print(std::ostream &os) override;
+    Value index(const Value &key) override;
+
+    std::string message;
+};
+
 #endif //DSCRIPT_OBJS_H

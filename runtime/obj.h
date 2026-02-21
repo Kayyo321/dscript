@@ -16,6 +16,7 @@ enum class ObjType {
     Native,
     String,
     List,
+    Error,
 };
 
 class Obj {

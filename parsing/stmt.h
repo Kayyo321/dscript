@@ -119,28 +119,42 @@ public:
 class ReturnStmt : public Stmt {
 public:
     ReturnStmt(Token keyword, ExprPtr value)
-        : keyword(std::move(keyword)), value(std::move(value)) {}
+        : keyword(std::move(keyword)) {
+        if (value != nullptr) {
+            values.push_back(std::move(value));
+        }
+    }
+
+    ReturnStmt(Token keyword, std::vector<ExprPtr> values)
+        : keyword(std::move(keyword)), values(std::move(values)) {}
 
     Value accept(AVisitor *visitor) override {
         return visitor->visit_return_stmt(this);
     }
 
     Token keyword;
-    ExprPtr value;
+    std::vector<ExprPtr> values;
 };
 
 class LetStmt : public Stmt {
 public:
     LetStmt(Token keyword, Token name, ExprPtr init)
-        : keyword(std::move(keyword)), name(std::move(name)), init(std::move(init)) {}
+        : keyword(std::move(keyword)), names{std::move(name)} {
+        if (init != nullptr) {
+            inits.push_back(std::move(init));
+        }
+    }
+
+    LetStmt(Token keyword, std::vector<Token> names, std::vector<ExprPtr> inits)
+        : keyword(std::move(keyword)), names(std::move(names)), inits(std::move(inits)) {}
 
     Value accept(AVisitor *visitor) override {
         return visitor->visit_let_stmt(this);
     }
 
     Token keyword;
-    Token name;
-    ExprPtr init;
+    std::vector<Token> names;
+    std::vector<ExprPtr> inits;
 };
 
 class WhileStmt : public Stmt {
