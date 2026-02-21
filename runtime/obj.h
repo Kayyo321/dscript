@@ -20,7 +20,7 @@ public:
     explicit Obj(ObjType type);
     virtual ~Obj() = default;
 
-    ObjType get_type();
+    ObjType get_type() const;
 
     virtual bool operator==(const Obj &other) = 0;
     virtual void print(std::ostream &os);

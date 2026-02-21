@@ -1,0 +1,3 @@
+/home/sullivanb/CLionProjects/dscript/build/CMakeFiles/dscript.dir
+/home/sullivanb/CLionProjects/dscript/build/CMakeFiles/edit_cache.dir
+/home/sullivanb/CLionProjects/dscript/build/CMakeFiles/rebuild_cache.dir

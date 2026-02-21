@@ -8,6 +8,8 @@ add_executable(dscript main.cpp
         lexing/token.cpp
         lexing/lexer.h
         lexing/lexer.cpp
+        runtime/obj.cpp
+        runtime/objs.cpp
         runtime/value.cpp
         runtime/value.h
         runtime/obj.h
@@ -16,4 +18,9 @@ add_executable(dscript main.cpp
         parsing/a_visitor.h
         parsing/expr.h
         parsing/parser.cpp
-        parsing/parser.h)
+        parsing/parser.h
+        runtime/vm.h
+        runtime/env.h
+        runtime/instance.h
+        runtime/env.cpp
+        runtime/klass.h)

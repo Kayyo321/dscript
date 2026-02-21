@@ -7,13 +7,23 @@
 
 #include <map>
 
+#include <iosfwd>
+
 #include "obj.h"
 
 #include "value.h"
+#include "env.h"
 
 #include <string>
 #include <map>
+#include <utility>
 #include <vector>
+#include <memory>
+
+#include "../parsing/stmt.h"
+
+class Vm;
+class Instance;
 
 class ObjString : public Obj {
 public:
@@ -25,36 +35,65 @@ public:
     std::string chars;
 };
 
-class ObjFunction : public Obj {
+class Callable: public Obj {
+protected:
+    explicit Callable(const ObjType type) : Obj(type) {}
+
 public:
-    //TODO chunk = AST Function
-    ObjFunction();
+    virtual ~Callable() = default;
 
-    bool operator==(const Obj &other) override;
-    void print(std::ostream &os) override;
+    virtual int arity() { return 0; }
 
-    int arity;
-    int upvalueCount;
-    //Chunk chunk;
-    ObjString *name;
+    virtual Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) = 0;
 };
 
-using NativeFn = Value(*)(std::vector<std::shared_ptr<ObjFunction>>);
-
-class ObjNative : public Obj {
+class ObjFunction: public Callable {
 public:
-    explicit ObjNative(NativeFn function);
+    static std::shared_ptr<ObjFunction> basic(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure) {
+        return std::make_shared<ObjFunction>(declaration, closure, false);
+    }
 
+    static std::shared_ptr<ObjFunction> init(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure) {
+        return std::make_shared<ObjFunction>(declaration, closure, true);
+    }
+
+    std::shared_ptr<ObjFunction> bind(Instance *inst);
+
+    ObjFunction(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, const bool is_init)
+        : Callable(ObjType::Function), declaration(std::move(declaration)), closure(std::move(closure)), is_init(is_init) {}
+
+    int arity() override;
+    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 
+    std::shared_ptr<FunctionStmt> declaration;
+    std::shared_ptr<Environment> closure;
+    bool is_init;
+};
+
+using NativeFn = Value(*)(std::vector<std::shared_ptr<Obj>>);
+
+class ObjNative : public Callable {
+public:
+    ObjNative(int arity, NativeFn function);
+
+    int arity() override;
+    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
+    bool operator==(const Obj &other) override;
+    void print(std::ostream &os) override;
+
+    int arity_value;
     NativeFn function;
 };
 
-class ObjClass : public Obj {
+class ObjClass : public Callable {
 public:
     ObjClass(std::string name, std::map<std::string, std::shared_ptr<ObjFunction>> methods);
 
+    std::shared_ptr<ObjFunction> find_method(const std::string &method_name) const;
+    int arity() override;
+    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 
@@ -64,12 +103,15 @@ public:
 
 class ObjInstance : public Obj {
 public:
-    explicit ObjInstance(ObjClass *klass, std::map<std::string, Value> fields);
+    explicit ObjInstance(std::shared_ptr<ObjClass> klass);
 
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 
-    ObjClass *klass;
+    Value get(const std::string &field_name);
+    void set(const std::string &field_name, Value value);
+
+    std::shared_ptr<ObjClass> klass;
     std::map<std::string, Value> fields;
 };
 

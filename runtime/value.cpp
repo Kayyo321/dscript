@@ -5,6 +5,7 @@
 #include "value.h"
 
 #include <cmath>
+#include <limits>
 #include <ostream>
 
 Value Value::boolean(const bool value) {
