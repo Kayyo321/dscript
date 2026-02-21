@@ -82,6 +82,34 @@ public:
 };
 
 
+class IndexExpr : public Expr {
+public:
+    IndexExpr(ExprPtr obj, Token bracket, ExprPtr key)
+        : obj(std::move(obj)), bracket(std::move(bracket)), key(std::move(key)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_index_expr(this);
+    }
+
+    ExprPtr obj;
+    Token bracket;
+    ExprPtr key;
+};
+
+
+class ListExpr : public Expr {
+public:
+    explicit ListExpr(std::vector<ExprPtr> elements)
+        : elements(std::move(elements)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_list_expr(this);
+    }
+
+    std::vector<ExprPtr> elements;
+};
+
+
 class GetExpr : public Expr {
 public:
     GetExpr(ExprPtr obj, Token name)

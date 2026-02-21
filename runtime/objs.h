@@ -31,6 +31,7 @@ public:
 
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
+    Value index(const Value &key) override;
 
     std::string chars;
 };
@@ -66,6 +67,7 @@ public:
     Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
+    Value index(const Value &key) override;
 
     std::shared_ptr<FunctionStmt> declaration;
     std::shared_ptr<Environment> closure;
@@ -82,6 +84,7 @@ public:
     Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
+    Value index(const Value &key) override;
 
     int arity_value;
     NativeFn function;
@@ -96,6 +99,7 @@ public:
     Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
+    Value index(const Value &key) override;
 
     std::string name;
     std::map<std::string, std::shared_ptr<ObjFunction>> methods;
@@ -107,12 +111,24 @@ public:
 
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
+    Value index(const Value &key) override;
 
     Value get(const std::string &field_name);
     void set(const std::string &field_name, Value value);
 
     std::shared_ptr<ObjClass> klass;
     std::map<std::string, Value> fields;
+};
+
+class List: public Obj {
+public:
+    explicit List(std::vector<Value> elements);
+
+    bool operator==(const Obj &other) override;
+    void print(std::ostream &os) override;
+    Value index(const Value &key) override;
+
+    std::vector<Value> elements;
 };
 
 #endif //DSCRIPT_OBJS_H

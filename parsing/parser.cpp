@@ -517,6 +517,7 @@ private:
             || check(TokenType::BlockIdentifier)
             || check(TokenType::Number)
             || check(TokenType::String)
+            || check(TokenType::LeftBracket)
             || check(TokenType::LeftParen)
             || check(TokenType::Minus)
             || check(TokenType::Not);
@@ -547,6 +548,20 @@ private:
                 continue;
             }
 
+            if (match(TokenType::Period)) {
+                Token name = consume_or_throw(TokenType::Identifier, "Expected property name after '.'.");
+                expr = std::make_shared<GetExpr>(expr, name);
+                continue;
+            }
+
+            if (match(TokenType::LeftBracket)) {
+                Token bracket = previous();
+                ExprPtr key = parse_expression();
+                consume_or_throw(TokenType::RightBracket, "Expected ']' after index key.");
+                expr = std::make_shared<IndexExpr>(expr, bracket, key);
+                continue;
+            }
+
             const std::size_t expr_line = previous().file_pos.line_no;
             if (allow_implicit_call && can_start_call_argument() && peek().file_pos.line_no == expr_line) {
                 std::vector<ExprPtr> args;
@@ -568,12 +583,6 @@ private:
                 }
 
                 expr = call_expr;
-                continue;
-            }
-
-            if (match(TokenType::Period)) {
-                Token name = consume_or_throw(TokenType::Identifier, "Expected property name after '.'.");
-                expr = std::make_shared<GetExpr>(expr, name);
                 continue;
             }
 
@@ -632,6 +641,18 @@ private:
             ExprPtr expr = parse_expression();
             consume_or_throw(TokenType::RightParen, "Expected ')' after expression.");
             return std::make_shared<GroupingExpr>(expr);
+        }
+
+        if (match(TokenType::LeftBracket)) {
+            std::vector<ExprPtr> elements;
+            if (!check(TokenType::RightBracket)) {
+                do {
+                    elements.push_back(parse_expression());
+                } while (match(TokenType::Comma));
+            }
+
+            consume_or_throw(TokenType::RightBracket, "Expected ']' after list literal.");
+            return std::make_shared<ListExpr>(elements);
         }
 
         throw ParseError("Expected expression.");

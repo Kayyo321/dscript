@@ -1,0 +1,15 @@
+fn main() {
+    log('== list literals and indexing ==');
+
+    let nums = [1, 2, 3, 4];
+    log(nums);
+    log(nums[0]);
+    log(nums[3]);
+
+    let nested = [nums, ['a', 'b']];
+    log(nested[0][1]);
+    log(nested[1][0]);
+
+    let word = 'hello';
+    log(word[1]);
+}

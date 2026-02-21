@@ -7,12 +7,15 @@
 
 #include <iosfwd>
 
+struct Value;
+
 enum class ObjType {
     Class,
     Function,
     Instance,
     Native,
     String,
+    List,
 };
 
 class Obj {
@@ -24,6 +27,7 @@ public:
 
     virtual bool operator==(const Obj &other) = 0;
     virtual void print(std::ostream &os);
+    virtual Value index(const Value &key);
 
 private:
     ObjType type;

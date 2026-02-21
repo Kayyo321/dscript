@@ -164,6 +164,19 @@ Value Resolver::visit_function_expr(FunctionExpr *expr) {
     return Value::none();
 }
 
+Value Resolver::visit_index_expr(IndexExpr *expr) {
+    resolve(expr->obj);
+    resolve(expr->key);
+    return Value::none();
+}
+
+Value Resolver::visit_list_expr(ListExpr *expr) {
+    for (const ExprPtr &element : expr->elements) {
+        resolve(element);
+    }
+    return Value::none();
+}
+
 Value Resolver::visit_named_block_expr(NamedBlockExpr *expr) {
     resolve(expr->value);
     return Value::none();

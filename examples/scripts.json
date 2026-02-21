@@ -11,5 +11,7 @@
   "examples/10_expr_and_block_identifiers.dsr",
   "examples/11_for_condition_only.dsr",
   "examples/12_named_blocks_and_none.dsr",
-  "examples/13_do_while.dsr"
+  "examples/13_do_while.dsr",
+  "examples/14_list_literals_and_indexing.dsr",
+  "examples/15_object_indexing_keys.dsr"
 ]

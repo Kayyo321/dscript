@@ -383,6 +383,28 @@ Value Vm::visit_function_expr(FunctionExpr *expr) {
 	return Value::object(ObjFunction::basic(declaration, environment));
 }
 
+Value Vm::visit_index_expr(IndexExpr *expr) {
+	const Value obj = evaluate(expr->obj);
+	const Value key = evaluate(expr->key);
+
+	if (obj.type != ValueType::Object) {
+		throw RuntimeError("Only objects are indexable.");
+	}
+
+	return obj.as.object->index(key);
+}
+
+Value Vm::visit_list_expr(ListExpr *expr) {
+	std::vector<Value> elements;
+	elements.reserve(expr->elements.size());
+
+	for (const ExprPtr &element : expr->elements) {
+		elements.push_back(evaluate(element));
+	}
+
+	return Value::object(std::make_shared<List>(elements));
+}
+
 Value Vm::visit_named_block_expr(NamedBlockExpr *expr) {
 	return evaluate(expr->value);
 }

@@ -1,5 +1,6 @@
 #include "objs.h"
 
+#include <cmath>
 #include <ostream>
 
 #include "throwables.h"
@@ -17,6 +18,24 @@ bool ObjString::operator==(const Obj &other) {
 
 void ObjString::print(std::ostream &os) {
     os << chars;
+}
+
+Value ObjString::index(const Value &key) {
+    if (key.type != ValueType::Number) {
+        throw RuntimeError("String index must be a number.");
+    }
+
+    const double index_d = key.as.number;
+    if (std::floor(index_d) != index_d) {
+        throw RuntimeError("String index must be an integer.");
+    }
+
+    const int index = static_cast<int>(index_d);
+    if (index < 0 || index >= static_cast<int>(chars.size())) {
+        throw RuntimeError("String index out of bounds.");
+    }
+
+    return Value::object(std::make_shared<ObjString>(std::string(1, chars[index])));
 }
 
 std::shared_ptr<ObjFunction> ObjFunction::bind(ObjInstance *inst) {
@@ -78,6 +97,27 @@ void ObjFunction::print(std::ostream &os) {
     os << "<fn " << declaration->name.literal.lexeme << ">";
 }
 
+Value ObjFunction::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw RuntimeError("Function index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    if (key_string->chars == "name") {
+        return Value::object(std::make_shared<ObjString>(declaration->name.literal.lexeme));
+    }
+
+    if (key_string->chars == "arity") {
+        return Value::number(arity());
+    }
+
+    if (key_string->chars == "is_init") {
+        return Value::boolean(is_init);
+    }
+
+    throw RuntimeError("Unknown function index key '" + key_string->chars + "'.");
+}
+
 ObjNative::ObjNative(const int arity, NativeFn function)
     : Callable(ObjType::Native), arity_value(arity), function(function) {}
 
@@ -99,6 +139,19 @@ bool ObjNative::operator==(const Obj &other) {
 
 void ObjNative::print(std::ostream &os) {
     os << "<native fn>";
+}
+
+Value ObjNative::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw RuntimeError("Native function index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    if (key_string->chars == "arity") {
+        return Value::number(arity());
+    }
+
+    throw RuntimeError("Unknown native function index key '" + key_string->chars + "'.");
 }
 
 ObjClass::ObjClass(std::string name, std::map<std::string, std::shared_ptr<ObjFunction>> methods)
@@ -142,6 +195,20 @@ void ObjClass::print(std::ostream &os) {
     os << name;
 }
 
+Value ObjClass::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw RuntimeError("Class index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    const auto method = find_method(key_string->chars);
+    if (method != nullptr) {
+        return Value::object(method);
+    }
+
+    throw RuntimeError("Undefined class method '" + key_string->chars + "'.");
+}
+
 ObjInstance::ObjInstance(std::shared_ptr<ObjClass> klass)
     : Obj(ObjType::Instance), klass(std::move(klass)) {}
 
@@ -151,6 +218,15 @@ bool ObjInstance::operator==(const Obj &other) {
 
 void ObjInstance::print(std::ostream &os) {
     os << klass->name << " instance";
+}
+
+Value ObjInstance::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw RuntimeError("Instance index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    return get(key_string->chars);
 }
 
 Value ObjInstance::get(const std::string &field_name) {
@@ -169,4 +245,45 @@ Value ObjInstance::get(const std::string &field_name) {
 
 void ObjInstance::set(const std::string &field_name, Value value) {
     fields.insert_or_assign(field_name, std::move(value));
+}
+
+List::List(std::vector<Value> elements)
+    : Obj(ObjType::List), elements(std::move(elements)) {}
+
+bool List::operator==(const Obj &other) {
+    if (other.get_type() != ObjType::List) {
+        return false;
+    }
+
+    const auto &list = static_cast<const List &>(other);
+    return elements == list.elements;
+}
+
+void List::print(std::ostream &os) {
+    os << "[";
+    for (size_t i = 0; i < elements.size(); ++i) {
+        elements[i].print(os);
+        if (i < elements.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << "]";
+}
+
+Value List::index(const Value &key) {
+    if (key.type != ValueType::Number) {
+        throw RuntimeError("List index must be a number.");
+    }
+
+    const double index_d = key.as.number;
+    if (std::floor(index_d) != index_d) {
+        throw RuntimeError("List index must be an integer.");
+    }
+
+    const int index = static_cast<int>(index_d);
+    if (index < 0 || index >= static_cast<int>(elements.size())) {
+        throw RuntimeError("List index out of bounds.");
+    }
+
+    return elements[index];
 }
