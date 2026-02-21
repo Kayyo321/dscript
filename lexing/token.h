@@ -40,6 +40,7 @@ enum class TokenType {
     Else,
     Finally,
     Log,
+    Return,
 
     LeftParen,
     RightParen,

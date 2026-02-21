@@ -210,4 +210,13 @@ CMakeFiles/dscript.dir/parsing/parser.cpp.o: \
  /usr/include/c++/15.2.1/bits/node_handle.h \
  /usr/include/c++/15.2.1/bits/stl_map.h \
  /usr/include/c++/15.2.1/bits/stl_multimap.h \
- /usr/include/c++/15.2.1/bits/erase_if.h
+ /usr/include/c++/15.2.1/bits/erase_if.h \
+ /home/sullivanb/CLionProjects/dscript/parsing/expr.h \
+ /home/sullivanb/CLionProjects/dscript/parsing/../runtime/objs.h \
+ /home/sullivanb/CLionProjects/dscript/parsing/../runtime/value.h \
+ /home/sullivanb/CLionProjects/dscript/parsing/../runtime/env.h \
+ /home/sullivanb/CLionProjects/dscript/parsing/../runtime/../parsing/stmt.h \
+ /usr/include/c++/15.2.1/unordered_map \
+ /usr/include/c++/15.2.1/bits/unordered_map.h \
+ /usr/include/c++/15.2.1/bits/hashtable.h \
+ /usr/include/c++/15.2.1/bits/hashtable_policy.h

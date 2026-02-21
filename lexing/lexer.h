@@ -51,6 +51,7 @@ private:
         {"else", TokenType::Else},
         {"finally", TokenType::Finally},
         {"log", TokenType::Log},
+        {"return", TokenType::Return},
     };
 
 protected:

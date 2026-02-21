@@ -675,9 +675,13 @@ CMakeFiles/dscript.dir/main.cpp.o: /home/sullivanb/CLionProjects/dscript/main.cp
 CMakeFiles/dscript.dir/parsing/parser.cpp.o: /home/sullivanb/CLionProjects/dscript/parsing/parser.cpp \
   /home/sullivanb/CLionProjects/dscript/lexing/lexer.h \
   /home/sullivanb/CLionProjects/dscript/lexing/token.h \
+  /home/sullivanb/CLionProjects/dscript/parsing/stmt.h \
+  /home/sullivanb/CLionProjects/dscript/runtime/env.h \
   /home/sullivanb/CLionProjects/dscript/runtime/obj.h \
+  /home/sullivanb/CLionProjects/dscript/runtime/objs.h \
   /home/sullivanb/CLionProjects/dscript/runtime/value.h \
   /home/sullivanb/CLionProjects/dscript/parsing/a_visitor.h \
+  /home/sullivanb/CLionProjects/dscript/parsing/expr.h \
   /home/sullivanb/CLionProjects/dscript/parsing/parser.h \
   /home/sullivanb/CLionProjects/dscript/parsing/stmt.h \
   /usr/include/alloca.h \
@@ -809,6 +813,8 @@ CMakeFiles/dscript.dir/parsing/parser.cpp.o: /home/sullivanb/CLionProjects/dscri
   /usr/include/c++/15.2.1/bits/functexcept.h \
   /usr/include/c++/15.2.1/bits/functional_hash.h \
   /usr/include/c++/15.2.1/bits/hash_bytes.h \
+  /usr/include/c++/15.2.1/bits/hashtable.h \
+  /usr/include/c++/15.2.1/bits/hashtable_policy.h \
   /usr/include/c++/15.2.1/bits/invoke.h \
   /usr/include/c++/15.2.1/bits/ios_base.h \
   /usr/include/c++/15.2.1/bits/istream.tcc \
@@ -866,6 +872,7 @@ CMakeFiles/dscript.dir/parsing/parser.cpp.o: /home/sullivanb/CLionProjects/dscri
   /usr/include/c++/15.2.1/bits/string_view.tcc \
   /usr/include/c++/15.2.1/bits/stringfwd.h \
   /usr/include/c++/15.2.1/bits/unique_ptr.h \
+  /usr/include/c++/15.2.1/bits/unordered_map.h \
   /usr/include/c++/15.2.1/bits/uses_allocator.h \
   /usr/include/c++/15.2.1/bits/uses_allocator_args.h \
   /usr/include/c++/15.2.1/bits/utility.h \
@@ -916,6 +923,7 @@ CMakeFiles/dscript.dir/parsing/parser.cpp.o: /home/sullivanb/CLionProjects/dscri
   /usr/include/c++/15.2.1/tuple \
   /usr/include/c++/15.2.1/type_traits \
   /usr/include/c++/15.2.1/typeinfo \
+  /usr/include/c++/15.2.1/unordered_map \
   /usr/include/c++/15.2.1/utility \
   /usr/include/c++/15.2.1/vector \
   /usr/include/ctype.h \
@@ -2021,8 +2029,6 @@ CMakeFiles/dscript.dir/runtime/env.cpp.o:
 
 CMakeFiles/dscript.dir/parsing/parser.cpp.o:
 
-CMakeFiles/dscript.dir/main.cpp.o:
-
 /usr/lib/libmvec.so.1:
 
 /usr/lib/libm.so.6:
@@ -2071,8 +2077,6 @@ CMakeFiles/dscript.dir/main.cpp.o:
 
 /usr/include/bits/flt-eval-method.h:
 
-/home/sullivanb/CLionProjects/dscript/runtime/objs.h:
-
 /home/sullivanb/CLionProjects/dscript/runtime/objs.cpp:
 
 /home/sullivanb/CLionProjects/dscript/runtime/obj.cpp:
@@ -2093,6 +2097,8 @@ CMakeFiles/dscript.dir/main.cpp.o:
 
 /usr/include/limits.h:
 
+/usr/include/c++/15.2.1/unordered_map:
+
 /usr/include/c++/15.2.1/pstl/glue_memory_defs.h:
 
 /usr/include/c++/15.2.1/pstl/execution_defs.h:
@@ -2103,6 +2109,10 @@ CMakeFiles/dscript.dir/main.cpp.o:
 
 /usr/include/c++/15.2.1/climits:
 
+CMakeFiles/dscript.dir/main.cpp.o:
+
+/usr/include/c++/15.2.1/bits/unordered_map.h:
+
 /usr/include/c++/15.2.1/bits/unique_ptr.h:
 
 /usr/include/c++/15.2.1/bits/stl_raw_storage_iter.h:
@@ -2111,6 +2121,10 @@ CMakeFiles/dscript.dir/main.cpp.o:
 
 /usr/include/c++/15.2.1/bits/ranges_uninitialized.h:
 
+/usr/include/c++/15.2.1/bits/hashtable_policy.h:
+
+/usr/include/c++/15.2.1/bits/hashtable.h:
+
 /usr/include/c++/15.2.1/bits/atomic_wait.h:
 
 CMakeFiles/dscript.dir/lexing/token.cpp.o:
@@ -2118,6 +2132,12 @@ CMakeFiles/dscript.dir/lexing/token.cpp.o:
 /usr/include/c++/15.2.1/bits/atomic_base.h:
 
 /usr/include/c++/15.2.1/bits/allocated_ptr.h:
+
+/usr/include/c++/15.2.1/backward/auto_ptr.h:
+
+/usr/include/c++/15.2.1/tr1/ell_integral.tcc:
+
+/usr/include/bits/xopen_lim.h:
 
 /usr/include/c++/15.2.1/bits/ostream.tcc:
 
@@ -2128,10 +2148,6 @@ CMakeFiles/dscript.dir/lexing/token.cpp.o:
 /usr/include/c++/15.2.1/charconv:
 
 /usr/include/c++/15.2.1/bits/memoryfwd.h:
-
-/home/sullivanb/CLionProjects/dscript/runtime/env.h:
-
-/usr/include/bits/types/wint_t.h:
 
 /usr/include/c++/15.2.1/cwchar:
 
@@ -2212,6 +2228,8 @@ CMakeFiles/dscript.dir/lexing/lexer.cpp.o:
 /usr/include/sys/syscall.h:
 
 /usr/include/c++/15.2.1/bits/stl_algobase.h:
+
+/home/sullivanb/CLionProjects/dscript/runtime/objs.h:
 
 /usr/include/c++/15.2.1/aarch64-unknown-linux-gnu/bits/cpu_defines.h:
 
@@ -2469,10 +2487,6 @@ CMakeFiles/dscript.dir/lexing/lexer.cpp.o:
 
 /usr/include/c++/15.2.1/bits/postypes.h:
 
-/usr/include/c++/15.2.1/tr1/ell_integral.tcc:
-
-/usr/include/bits/xopen_lim.h:
-
 /usr/include/c++/15.2.1/bits/range_access.h:
 
 /usr/include/c++/15.2.1/bits/ranges_base.h:
@@ -2577,6 +2591,12 @@ CMakeFiles/dscript.dir/lexing/lexer.cpp.o:
 
 /usr/include/c++/15.2.1/ext/aligned_buffer.h:
 
+/usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/libgcc.a:
+
+/usr/include/bits/unistd_ext.h:
+
+/usr/include/c++/15.2.1/ext/alloc_traits.h:
+
 /usr/include/bits/getopt_core.h:
 
 /usr/include/c++/15.2.1/ext/numeric_traits.h:
@@ -2604,6 +2624,10 @@ CMakeFiles/dscript.dir/lexing/lexer.cpp.o:
 /usr/include/c++/15.2.1/optional:
 
 /usr/include/c++/15.2.1/sstream:
+
+/usr/include/bits/types/wint_t.h:
+
+/home/sullivanb/CLionProjects/dscript/runtime/env.h:
 
 /home/sullivanb/CLionProjects/dscript/runtime/obj.h:
 
@@ -2679,9 +2703,11 @@ CMakeFiles/dscript.dir/runtime/value.cpp.o:
 
 /home/sullivanb/CLionProjects/dscript/main.cpp:
 
+/home/sullivanb/CLionProjects/dscript/parsing/stmt.h:
+
 /home/sullivanb/CLionProjects/dscript/parsing/a_visitor.h:
 
-/home/sullivanb/CLionProjects/dscript/parsing/stmt.h:
+/home/sullivanb/CLionProjects/dscript/parsing/expr.h:
 
 /usr/include/asm/unistd.h:
 
@@ -2692,11 +2718,3 @@ CMakeFiles/dscript.dir/runtime/value.cpp.o:
 /usr/include/bits/stdint-least.h:
 
 /usr/include/bits/syscall.h:
-
-/usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/libgcc.a:
-
-/usr/include/c++/15.2.1/ext/alloc_traits.h:
-
-/usr/include/bits/unistd_ext.h:
-
-/usr/include/c++/15.2.1/backward/auto_ptr.h:
