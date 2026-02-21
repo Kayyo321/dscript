@@ -1,0 +1,13 @@
+[
+  "examples/01_literals_and_ops.dsr",
+  "examples/02_variables_assignment_scope.dsr",
+  "examples/03_if_else_and_logic.dsr",
+  "examples/04_while_loop.dsr",
+  "examples/05_for_loops.dsr",
+  "examples/06_functions_and_return.dsr",
+  "examples/07_def_callable_keyword.dsr",
+  "examples/08_classes_fields_methods.dsr",
+  "examples/09_inheritance_super_self.dsr",
+  "examples/10_expr_and_block_identifiers.dsr",
+  "examples/11_for_condition_only.dsr"
+]

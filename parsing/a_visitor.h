@@ -22,6 +22,7 @@ class DefStmt;
 class AssignExpr;
 class BinaryExpr;
 class CallExpr;
+class FunctionExpr;
 class GetExpr;
 class GroupingExpr;
 class LiteralExpr;
@@ -51,6 +52,7 @@ public:
     virtual Value visit_assign_expr(AssignExpr *expr) = 0;
     virtual Value visit_binary_expr(BinaryExpr *expr) = 0;
     virtual Value visit_call_expr(CallExpr *expr) = 0;
+    virtual Value visit_function_expr(FunctionExpr *expr) = 0;
     virtual Value visit_get_expr(GetExpr *expr) = 0;
     virtual Value visit_grouping_expr(GroupingExpr *expr) = 0;
     virtual Value visit_literal_expr(LiteralExpr *expr) = 0;

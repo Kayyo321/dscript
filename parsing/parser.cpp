@@ -460,6 +460,16 @@ private:
         return parse_call();
     }
 
+    ExprPtr parse_call_argument() {
+        if (match(TokenType::Let)) {
+            std::vector<StmtPtr> body;
+            body.push_back(parse_let_stmt());
+            return std::make_shared<FunctionExpr>(body);
+        }
+
+        return parse_expression();
+    }
+
     ExprPtr parse_call() {
         ExprPtr expr = parse_primary();
 
@@ -468,12 +478,18 @@ private:
                 std::vector<ExprPtr> args;
                 if (!check(TokenType::RightParen)) {
                     do {
-                        args.push_back(parse_expression());
+                        args.push_back(parse_call_argument());
                     } while (match(TokenType::Comma));
                 }
 
                 Token paren = consume_or_throw(TokenType::RightParen, "Expected ')' after arguments.");
-                expr = std::make_shared<CallExpr>(expr, paren, args);
+                auto call_expr = std::make_shared<CallExpr>(expr, paren, args);
+
+                if (match(TokenType::LeftBrace)) {
+                    call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
+                }
+
+                expr = call_expr;
                 continue;
             }
 

@@ -1,0 +1,27 @@
+fn main() {
+    log('== literals and operators ==');
+
+    log(true);
+    log(false);
+    log(none);
+
+    log(1 + 2);
+    log(7 - 3);
+    log(4 * 5);
+    log(20 / 4);
+    log(20 % 6);
+    log(2 ^ 3);
+
+    log('hello ' + 'world');
+
+    log(3 > 2);
+    log(3 >= 3);
+    log(2 < 3);
+    log(2 <= 2);
+
+    log(4 is 4);
+    log(4 not 5);
+
+    log(not false);
+    log(-10);
+}

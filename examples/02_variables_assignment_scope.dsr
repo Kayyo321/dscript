@@ -1,0 +1,16 @@
+fn main() {
+    log('== variables, assignment, block scope ==');
+
+    let a = 10;
+    log(a);
+
+    a = a + 5;
+    log(a);
+
+    {
+        let a = 99;
+        log(a);
+    }
+
+    log(a);
+}

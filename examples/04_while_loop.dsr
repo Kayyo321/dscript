@@ -1,0 +1,9 @@
+fn main() {
+    log('== while loop ==');
+
+    let i = 0;
+    while i < 3 do {
+        log(i);
+        i = i + 1;
+    }
+}

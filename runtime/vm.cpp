@@ -297,6 +297,12 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 	return callable->call(this, args);
 }
 
+Value Vm::visit_function_expr(FunctionExpr *expr) {
+	const Token literal_name{TokenType::Identifier, "<literal>", FilePos{}};
+	auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<Token>{}, expr->body, false);
+	return Value::object(ObjFunction::basic(declaration, environment));
+}
+
 Value Vm::visit_get_expr(GetExpr *expr) {
 	const Value obj = evaluate(expr->obj);
 	if (obj.type != ValueType::Object) {

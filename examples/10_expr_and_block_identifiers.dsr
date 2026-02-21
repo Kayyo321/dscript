@@ -1,0 +1,13 @@
+fn x(%expr) ($block) {
+    log('inside x');
+    %expr();
+    $block();
+}
+
+fn main() {
+    log('== expr/block call-site literals ==');
+
+    x(let i = 0) {
+        log('this is what will be $block');
+    }
+}

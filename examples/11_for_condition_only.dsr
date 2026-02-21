@@ -1,0 +1,9 @@
+let j = 0;
+for j < 2 do {
+    log(j + 10);
+    j = j + 1;
+}
+
+fn main() {
+    log('== condition-only for already executed at top-level ==');
+}

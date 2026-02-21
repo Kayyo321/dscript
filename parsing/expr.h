@@ -55,6 +55,19 @@ public:
 };
 
 
+class FunctionExpr : public Expr {
+public:
+    explicit FunctionExpr(std::vector<StmtPtr> body)
+        : body(std::move(body)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_function_expr(this);
+    }
+
+    std::vector<StmtPtr> body;
+};
+
+
 class GetExpr : public Expr {
 public:
     GetExpr(ExprPtr obj, Token name)

@@ -1,0 +1,7 @@
+fn main() {
+    log('== for loops ==');
+
+    for (let i = 0; i < 3; i = i + 1) {
+        log(i);
+    }
+}

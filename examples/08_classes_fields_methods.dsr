@@ -1,0 +1,25 @@
+class Counter {
+    fn init(start) {
+        self.value = start;
+    }
+
+    fn inc() {
+        self.value = self.value + 1;
+    }
+
+    fn get() {
+        return self.value;
+    }
+}
+
+fn main() {
+    log('== classes, fields, methods ==');
+
+    let c = Counter(5);
+    c.inc();
+    c.inc();
+    log(c.get());
+
+    c.extra = 99;
+    log(c.extra);
+}

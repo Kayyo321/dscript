@@ -1,0 +1,23 @@
+class Animal {
+    fn sound() {
+        return 'noise';
+    }
+}
+
+class Dog is Animal {
+    fn sound() {
+        return super.sound() + ' + bark';
+    }
+
+    fn who() {
+        return self.sound();
+    }
+}
+
+fn main() {
+    log('== inheritance, super, self ==');
+
+    let d = Dog();
+    log(d.sound());
+    log(d.who());
+}

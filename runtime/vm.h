@@ -39,6 +39,7 @@ public:
 	Value visit_assign_expr(AssignExpr *expr) override;
 	Value visit_binary_expr(BinaryExpr *expr) override;
 	Value visit_call_expr(CallExpr *expr) override;
+	Value visit_function_expr(FunctionExpr *expr) override;
 	Value visit_get_expr(GetExpr *expr) override;
 	Value visit_grouping_expr(GroupingExpr *expr) override;
 	Value visit_literal_expr(LiteralExpr *expr) override;

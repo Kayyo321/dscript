@@ -1,0 +1,16 @@
+fn main() {
+    log('== if/else, and/or logic ==');
+
+    let ready = true;
+    let allowed = false;
+
+    if ready and not allowed then {
+        log('path A');
+    } else {
+        log('path B');
+    }
+
+    if allowed or ready then {
+        log('or works');
+    }
+}

@@ -32,6 +32,7 @@ public:
     Value visit_assign_expr(AssignExpr *expr) override;
     Value visit_binary_expr(BinaryExpr *expr) override;
     Value visit_call_expr(CallExpr *expr) override;
+    Value visit_function_expr(FunctionExpr *expr) override;
     Value visit_get_expr(GetExpr *expr) override;
     Value visit_grouping_expr(GroupingExpr *expr) override;
     Value visit_literal_expr(LiteralExpr *expr) override;
@@ -59,7 +60,7 @@ private:
 
     void resolve(const StmtPtr &statement);
     void resolve(const ExprPtr &expression);
-    void resolve_function(const std::vector<Token> &params, const std::vector<StmtPtr> &body, FunctionType type);
+    void resolve_function(const std::vector<Token> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, FunctionType type);
 
     void begin_scope();
     void end_scope();

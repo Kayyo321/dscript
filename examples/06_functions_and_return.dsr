@@ -1,0 +1,17 @@
+fn add(a, b) {
+    return a + b;
+}
+
+fn fib(n) {
+    if n <= 1 then {
+        return n;
+    }
+
+    return fib(n - 1) + fib(n - 2);
+}
+
+fn main() {
+    log('== functions and return ==');
+    log(add(2, 3));
+    log(fib(6));
+}

@@ -57,7 +57,7 @@ Value Resolver::visit_class_stmt(ClassStmt *stmt) {
         if (method->name.literal.lexeme == "init") {
             declaration = FunctionType::Initializer;
         }
-        resolve_function(method->params, method->body, declaration);
+        resolve_function(method->params, method->blocks, method->body, declaration);
     }
 
     end_scope();
@@ -78,7 +78,7 @@ Value Resolver::visit_expression_stmt(ExpressionStmt *stmt) {
 Value Resolver::visit_function_stmt(FunctionStmt *stmt) {
     declare(stmt->name);
     define(stmt->name);
-    resolve_function(stmt->params, stmt->body, FunctionType::Function);
+    resolve_function(stmt->params, stmt->blocks, stmt->body, FunctionType::Function);
     return Value::none();
 }
 
@@ -135,7 +135,7 @@ Value Resolver::visit_for_stmt(ForStmt *stmt) {
 Value Resolver::visit_def_stmt(DefStmt *stmt) {
     declare(stmt->new_keyword);
     define(stmt->new_keyword);
-    resolve_function(stmt->params, stmt->body, FunctionType::Def);
+    resolve_function(stmt->params, stmt->blocks, stmt->body, FunctionType::Def);
     return Value::none();
 }
 
@@ -156,6 +156,11 @@ Value Resolver::visit_call_expr(CallExpr *expr) {
     for (const ExprPtr &argument : expr->arguments) {
         resolve(argument);
     }
+    return Value::none();
+}
+
+Value Resolver::visit_function_expr(FunctionExpr *expr) {
+    resolve_function({}, std::nullopt, expr->body, FunctionType::Function);
     return Value::none();
 }
 
@@ -236,7 +241,7 @@ void Resolver::resolve(const ExprPtr &expression) {
     }
 }
 
-void Resolver::resolve_function(const std::vector<Token> &params, const std::vector<StmtPtr> &body, const FunctionType type) {
+void Resolver::resolve_function(const std::vector<Token> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, const FunctionType type) {
     const FunctionType enclosing_function = current_function;
     current_function = type;
 
@@ -244,6 +249,13 @@ void Resolver::resolve_function(const std::vector<Token> &params, const std::vec
     for (const Token &param : params) {
         declare(param);
         define(param);
+    }
+
+    if (blocks.has_value()) {
+        for (const auto &block : blocks.value()) {
+            declare(block.name);
+            define(block.name);
+        }
     }
 
     for (const StmtPtr &statement : body) {

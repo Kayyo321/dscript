@@ -66,6 +66,10 @@ Token Lexer::number() {
 }
 
 Token Lexer::identifier(const char start) {
+    if (start == '$' || start == '%') {
+        next(true);
+    }
+
     while (isalnum(peek(0)) || peek(0) == '_') {
         next(true);
     }

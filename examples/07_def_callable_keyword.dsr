@@ -1,0 +1,11 @@
+def shout(msg) {
+    log('shout: ' + msg);
+}
+
+def noop;
+
+fn main() {
+    log('== def statements ==');
+    shout('hello');
+    noop();
+}
