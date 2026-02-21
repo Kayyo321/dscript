@@ -1,0 +1,21 @@
+class Dog {
+    fn bark() {
+        log('woof');
+    }
+}
+
+class Cat {
+}
+
+fn main() {
+    log('== type checks with couldbe ==');
+
+    let d = Dog();
+    let c = Cat();
+
+    if d couldbe Dog then log('d couldbe Dog');
+    if d couldbe Cat then log('d couldbe Cat'); else log('d is not Cat');
+
+    if c couldbe Cat then log('c couldbe Cat');
+    if c is not Dog then log('c is not Dog');
+}

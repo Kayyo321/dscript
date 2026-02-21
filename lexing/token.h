@@ -28,6 +28,7 @@ enum class TokenType {
     And,
     Is,
     Not,
+    CouldBe,
     Class,
     Fn,
     Let,

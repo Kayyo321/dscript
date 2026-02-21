@@ -60,6 +60,7 @@ private:
 
 	static bool is_truthy(const Value &value);
 	static bool is_equal(const Value &left, const Value &right);
+	static bool is_type_match(const Value &left, const Value &right);
 	static void assert_number_operand(const Token &op, const Value &value);
 	static void assert_number_operands(const Token &op, const Value &left, const Value &right);
 	static std::string stringify(const Value &value);

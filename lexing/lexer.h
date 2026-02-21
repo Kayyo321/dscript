@@ -39,6 +39,7 @@ private:
         {"and", TokenType::And},
         {"is", TokenType::Is},
         {"not", TokenType::Not},
+        {"couldbe", TokenType::CouldBe},
         {"class", TokenType::Class},
         {"fn", TokenType::Fn},
         {"let", TokenType::Let},

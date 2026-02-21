@@ -13,5 +13,6 @@
   "examples/12_named_blocks_and_none.dsr",
   "examples/13_do_while.dsr",
   "examples/14_list_literals_and_indexing.dsr",
-  "examples/15_object_indexing_keys.dsr"
+  "examples/15_object_indexing_keys.dsr",
+  "examples/16_type_checks_is.dsr"
 ]

@@ -460,7 +460,31 @@ private:
     }
 
     ExprPtr parse_equality() {
-        return parse_left_assoc(&Parser::parse_comparison, {TokenType::Is, TokenType::Not});
+        ExprPtr expr = parse_comparison();
+
+        while (true) {
+            if (match(TokenType::Is)) {
+                Token op = previous();
+                if (match(TokenType::Not)) {
+                    op = previous();
+                }
+
+                ExprPtr right = parse_comparison();
+                expr = std::make_shared<BinaryExpr>(expr, op, right);
+                continue;
+            }
+
+            if (match(TokenType::CouldBe)) {
+                Token op = previous();
+                ExprPtr right = parse_comparison();
+                expr = std::make_shared<BinaryExpr>(expr, op, right);
+                continue;
+            }
+
+            break;
+        }
+
+        return expr;
     }
 
     ExprPtr parse_comparison() {
@@ -518,9 +542,7 @@ private:
             || check(TokenType::Number)
             || check(TokenType::String)
             || check(TokenType::LeftBracket)
-            || check(TokenType::LeftParen)
-            || check(TokenType::Minus)
-            || check(TokenType::Not);
+            || check(TokenType::LeftParen);
     }
 
     ExprPtr parse_call() {

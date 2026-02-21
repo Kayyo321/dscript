@@ -266,6 +266,9 @@ Value Vm::visit_binary_expr(BinaryExpr *expr) {
 		case TokenType::Not:
 			return Value::boolean(!is_equal(left, right));
 
+		case TokenType::CouldBe:
+			return Value::boolean(is_type_match(left, right));
+
 		default:
 			break;
 	}
@@ -542,6 +545,31 @@ bool Vm::is_truthy(const Value &value) {
 
 bool Vm::is_equal(const Value &left, const Value &right) {
 	return left == right;
+}
+
+bool Vm::is_type_match(const Value &left, const Value &right) {
+	if (right.type != ValueType::Object) {
+		return false;
+	}
+
+	const auto right_class = std::dynamic_pointer_cast<ObjClass>(right.as.object);
+	if (right_class == nullptr) {
+		return false;
+	}
+
+	if (left.type != ValueType::Object) {
+		return false;
+	}
+
+	if (const auto left_instance = std::dynamic_pointer_cast<ObjInstance>(left.as.object); left_instance != nullptr) {
+		return left_instance->klass->name == right_class->name;
+	}
+
+	if (const auto left_class = std::dynamic_pointer_cast<ObjClass>(left.as.object); left_class != nullptr) {
+		return left_class->name == right_class->name;
+	}
+
+	return false;
 }
 
 void Vm::assert_number_operand(const Token &op, const Value &value) {

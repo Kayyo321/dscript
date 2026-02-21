@@ -20,7 +20,7 @@ fn main() {
     log(2 <= 2);
 
     log(4 is 4);
-    log(4 not 5);
+    log(4 is not 5);
 
     log(not false);
     log(-10);
