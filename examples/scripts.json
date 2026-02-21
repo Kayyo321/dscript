@@ -14,5 +14,9 @@
   "examples/13_do_while.dsr",
   "examples/14_list_literals_and_indexing.dsr",
   "examples/15_object_indexing_keys.dsr",
-  "examples/16_type_checks_is.dsr"
+  "examples/16_type_checks_is.dsr",
+  "examples/17_error_showcase.dsr",
+  "examples/18_def_keyword_showcase.dsr",
+  "examples/19_loop_finally_semantics.dsr",
+  "examples/20_compound_and_incdec_ops.dsr"
 ]

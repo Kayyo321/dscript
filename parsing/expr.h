@@ -221,6 +221,21 @@ public:
 };
 
 
+class UpdateExpr : public Expr {
+public:
+    UpdateExpr(ExprPtr target, Token op, bool is_prefix)
+        : target(std::move(target)), op(std::move(op)), is_prefix(is_prefix) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_update_expr(this);
+    }
+
+    ExprPtr target;
+    Token op;
+    bool is_prefix;
+};
+
+
 class VariableExpr : public Expr {
 public:
     explicit VariableExpr(Token name)

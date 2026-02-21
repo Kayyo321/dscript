@@ -1,0 +1,72 @@
+let energy = 1;
+let bag = ['rune', 'ink'];
+
+def runlater(%action) {
+    log('runlater: before');
+    %action();
+    log('runlater: after');
+}
+
+def guard(cond) (pass: $pass_block, fail: $fail_block) {
+    if cond then {
+        if $pass_block is not none then $pass_block();
+    } else {
+        if $fail_block is not none then $fail_block();
+    }
+}
+
+def spellbook(title, %seed) (cast: $cast, on_fail: $on_fail, after: $after) {
+    log('=== spellbook ===');
+    log(title);
+
+    %seed();
+    let power = energy;
+    log('power after seed:');
+    log(power);
+
+    def repeat(times) ($body) {
+        let i = 0;
+        while i < times do {
+            $body();
+            i = i + 1;
+        }
+    }
+
+    repeat 3 {
+        if $cast is not none then {
+            $cast();
+            power = power + 1;
+        } else {
+            if $on_fail is not none then $on_fail();
+        }
+    }
+
+    if $after is not none then $after();
+
+    log('final power:');
+    log(power);
+    log('=== done ===');
+}
+
+fn main() {
+    runlater(energy = energy + 4);
+    log('energy after runlater:');
+    log(energy);
+
+    spellbook('Obsidian Protocol', (energy = energy + 1), cast: {
+        energy = energy + 2;
+        bag = [bag[0], bag[1], 'ember'];
+        log('cast -> energy:');
+        log(energy);
+        log('cast -> newest item:');
+        log(bag[2]);
+    });
+
+    guard energy > 3 pass: {
+        log('guard then-branch');
+    }
+
+    spellbook('Fallback Demo', (energy = energy + 0), on_fail: {
+        log('fallback cast: no cast block provided');
+    });
+}

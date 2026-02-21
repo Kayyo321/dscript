@@ -119,6 +119,7 @@ Value Resolver::visit_let_stmt(LetStmt *stmt) {
 Value Resolver::visit_while_stmt(WhileStmt *stmt) {
     resolve(stmt->condition);
     resolve(stmt->body);
+    resolve(stmt->finally_clause);
     return Value::none();
 }
 
@@ -128,6 +129,7 @@ Value Resolver::visit_for_stmt(ForStmt *stmt) {
     resolve(stmt->condition);
     resolve(stmt->inc);
     resolve(stmt->body);
+    resolve(stmt->finally_clause);
     end_scope();
     return Value::none();
 }
@@ -232,6 +234,16 @@ Value Resolver::visit_self_expr(SelfExpr *expr) {
 
 Value Resolver::visit_unary_expr(UnaryExpr *expr) {
     resolve(expr->right);
+    return Value::none();
+}
+
+Value Resolver::visit_update_expr(UpdateExpr *expr) {
+    resolve(expr->target);
+
+    if (const auto variable = std::dynamic_pointer_cast<VariableExpr>(expr->target); variable != nullptr) {
+        resolve_local(expr, variable->name);
+    }
+
     return Value::none();
 }
 

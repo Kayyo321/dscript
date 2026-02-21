@@ -144,6 +144,7 @@ private:
                 case TokenType::Do:
                 case TokenType::For:
                 case TokenType::While:
+                case TokenType::Finally:
                 case TokenType::Log:
                 case TokenType::Let:
                 case TokenType::Return:
@@ -312,15 +313,27 @@ private:
         return std::make_shared<IfStmt>(condition, then_branch, else_branch);
     }
 
+    StmtPtr parse_loop_finally_clause_if_present() {
+        if (!match(TokenType::Finally)) {
+            return nullptr;
+        }
+
+        return parse_stmt();
+    }
+
     StmtPtr parse_do_stmt() {
         StmtPtr body = parse_stmt();
         consume_or_throw(TokenType::While, "Expected 'while' after do-while body.");
         ExprPtr condition = parse_expression();
         match(TokenType::Semicolon);
+        StmtPtr finally_clause = parse_loop_finally_clause_if_present();
 
         std::vector<StmtPtr> statements;
         statements.push_back(body);
-        statements.push_back(std::make_shared<WhileStmt>(condition, body));
+        statements.push_back(std::make_shared<WhileStmt>(condition, body, nullptr));
+        if (finally_clause != nullptr) {
+            statements.push_back(finally_clause);
+        }
         return std::make_shared<BlockStmt>(statements);
     }
 
@@ -329,7 +342,8 @@ private:
         if (match(TokenType::Do)) {
         }
         StmtPtr body = parse_stmt();
-        return std::make_shared<WhileStmt>(condition, body);
+        StmtPtr finally_clause = parse_loop_finally_clause_if_present();
+        return std::make_shared<WhileStmt>(condition, body, finally_clause);
     }
 
     StmtPtr parse_for_stmt() {
@@ -360,14 +374,16 @@ private:
             if (match(TokenType::Do)) {
             }
             StmtPtr body = parse_stmt();
-            return std::make_shared<ForStmt>(initializer, condition, increment, body);
+            StmtPtr finally_clause = parse_loop_finally_clause_if_present();
+            return std::make_shared<ForStmt>(initializer, condition, increment, body, finally_clause);
         }
 
         ExprPtr condition = parse_expression();
         if (match(TokenType::Do)) {
         }
         StmtPtr body = parse_stmt();
-        return std::make_shared<ForStmt>(nullptr, condition, nullptr, body);
+        StmtPtr finally_clause = parse_loop_finally_clause_if_present();
+        return std::make_shared<ForStmt>(nullptr, condition, nullptr, body, finally_clause);
     }
 
     StmtPtr parse_log_stmt() {
@@ -422,8 +438,54 @@ private:
     ExprPtr parse_assignment() {
         ExprPtr expr = parse_or();
 
-        if (match(TokenType::Equals)) {
+        if (matches_any({
+            TokenType::Equals,
+            TokenType::PlusEquals,
+            TokenType::MinusEquals,
+            TokenType::StarEquals,
+            TokenType::SlashEquals,
+            TokenType::ModuloEquals,
+            TokenType::PowerEquals,
+        })) {
+            Token assignment_op = previous();
             ExprPtr value = parse_assignment();
+
+            TokenType binary_op_type = TokenType::Illegal;
+            switch (assignment_op.type) {
+                case TokenType::PlusEquals:
+                    binary_op_type = TokenType::Plus;
+                    break;
+                case TokenType::MinusEquals:
+                    binary_op_type = TokenType::Minus;
+                    break;
+                case TokenType::StarEquals:
+                    binary_op_type = TokenType::Star;
+                    break;
+                case TokenType::SlashEquals:
+                    binary_op_type = TokenType::Slash;
+                    break;
+                case TokenType::ModuloEquals:
+                    binary_op_type = TokenType::Modulo;
+                    break;
+                case TokenType::PowerEquals:
+                    binary_op_type = TokenType::Power;
+                    break;
+                default:
+                    break;
+            }
+
+            if (binary_op_type != TokenType::Illegal) {
+                Token binary_op = assignment_op;
+                binary_op.type = binary_op_type;
+
+                if (auto variable = std::dynamic_pointer_cast<VariableExpr>(expr)) {
+                    value = std::make_shared<BinaryExpr>(std::make_shared<VariableExpr>(variable->name), binary_op, value);
+                } else if (auto get = std::dynamic_pointer_cast<GetExpr>(expr)) {
+                    value = std::make_shared<BinaryExpr>(std::make_shared<GetExpr>(get->obj, get->name), binary_op, value);
+                } else {
+                    throw ParseError("Invalid assignment target.");
+                }
+            }
 
             if (auto variable = std::dynamic_pointer_cast<VariableExpr>(expr)) {
                 return std::make_shared<AssignExpr>(variable->name, value);
@@ -504,13 +566,25 @@ private:
     }
 
     ExprPtr parse_unary() {
+        if (matches_any({TokenType::PlusPlus, TokenType::MinusMinus})) {
+            Token op = previous();
+            ExprPtr target = parse_unary();
+            return std::make_shared<UpdateExpr>(target, op, true);
+        }
+
         if (matches_any({TokenType::Not, TokenType::Minus})) {
             Token op = previous();
             ExprPtr right = parse_unary();
             return std::make_shared<UnaryExpr>(op, right);
         }
 
-        return parse_call();
+        ExprPtr expr = parse_call();
+        while (matches_any({TokenType::PlusPlus, TokenType::MinusMinus})) {
+            Token op = previous();
+            expr = std::make_shared<UpdateExpr>(expr, op, false);
+        }
+
+        return expr;
     }
 
     ExprPtr parse_call_argument() {

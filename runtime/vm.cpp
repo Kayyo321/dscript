@@ -214,8 +214,14 @@ Value Vm::visit_let_stmt(LetStmt *stmt) {
 }
 
 Value Vm::visit_while_stmt(WhileStmt *stmt) {
+	bool ran = false;
 	while (is_truthy(evaluate(stmt->condition))) {
+		ran = true;
 		execute(stmt->body);
+	}
+
+	if (ran && stmt->finally_clause != nullptr) {
+		execute(stmt->finally_clause);
 	}
 
 	return Value::none();
@@ -226,11 +232,17 @@ Value Vm::visit_for_stmt(ForStmt *stmt) {
 		execute(stmt->init);
 	}
 
+	bool ran = false;
 	while (stmt->condition == nullptr || is_truthy(evaluate(stmt->condition))) {
+		ran = true;
 		execute(stmt->body);
 		if (stmt->inc != nullptr) {
 			(void) evaluate(stmt->inc);
 		}
+	}
+
+	if (ran && stmt->finally_clause != nullptr) {
+		execute(stmt->finally_clause);
 	}
 
 	return Value::none();
@@ -560,6 +572,46 @@ Value Vm::visit_unary_expr(UnaryExpr *expr) {
 	}
 
 	return Value::none();
+}
+
+Value Vm::visit_update_expr(UpdateExpr *expr) {
+	const bool is_increment = expr->op.type == TokenType::PlusPlus;
+	const double delta = is_increment ? 1.0 : -1.0;
+
+	if (const auto variable = std::dynamic_pointer_cast<VariableExpr>(expr->target); variable != nullptr) {
+		const Value current = lookup_variable(variable->name, expr);
+		assert_number_operand(expr->op, current);
+
+		const Value updated = Value::number(current.as.number + delta);
+		if (const auto it = locals.find(expr); it != locals.end()) {
+			environment->assign_at(it->second, variable->name.literal.lexeme, updated);
+		} else {
+			globals->assign(variable->name.literal.lexeme, updated);
+		}
+
+		return expr->is_prefix ? updated : current;
+	}
+
+	if (const auto get = std::dynamic_pointer_cast<GetExpr>(expr->target); get != nullptr) {
+		const Value obj = evaluate(get->obj);
+		if (obj.type != ValueType::Object) {
+			throw TypeError("Only instances have fields.", get->name.file_pos);
+		}
+
+		const auto instance = std::dynamic_pointer_cast<ObjInstance>(obj.as.object);
+		if (instance == nullptr) {
+			throw TypeError("Only instances have fields.", get->name.file_pos);
+		}
+
+		const Value current = instance->get(get->name.literal.lexeme);
+		assert_number_operand(expr->op, current);
+
+		const Value updated = Value::number(current.as.number + delta);
+		instance->set(get->name.literal.lexeme, updated);
+		return expr->is_prefix ? updated : current;
+	}
+
+	throw TypeError("Invalid target for update operator.", expr->op.file_pos);
 }
 
 Value Vm::visit_variable_expr(VariableExpr *expr) {

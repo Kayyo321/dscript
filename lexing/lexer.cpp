@@ -95,12 +95,32 @@ Token Lexer::identifier(const char start) {
 
 Token Lexer::symbol() {
     switch (peek(0)) {
-        case '+': return eat_then_compile(TokenType::Plus);
-        case '-': return eat_then_compile(TokenType::Minus);
-        case '*': return eat_then_compile(TokenType::Star);
-        case '/': return eat_then_compile(TokenType::Slash);
-        case '%': return eat_then_compile(TokenType::Modulo);
-        case '^': return eat_then_compile(TokenType::Power);
+        case '+':
+            if (peek(1) == '=') return eat_then_compile(TokenType::PlusEquals, 2);
+            if (peek(1) == '+') return eat_then_compile(TokenType::PlusPlus, 2);
+            return eat_then_compile(TokenType::Plus);
+
+        case '-':
+            if (peek(1) == '=') return eat_then_compile(TokenType::MinusEquals, 2);
+            if (peek(1) == '-') return eat_then_compile(TokenType::MinusMinus, 2);
+            return eat_then_compile(TokenType::Minus);
+
+        case '*':
+            if (peek(1) == '=') return eat_then_compile(TokenType::StarEquals, 2);
+            return eat_then_compile(TokenType::Star);
+
+        case '/':
+            if (peek(1) == '=') return eat_then_compile(TokenType::SlashEquals, 2);
+            return eat_then_compile(TokenType::Slash);
+
+        case '%':
+            if (peek(1) == '=') return eat_then_compile(TokenType::ModuloEquals, 2);
+            return eat_then_compile(TokenType::Modulo);
+
+        case '^':
+            if (peek(1) == '=') return eat_then_compile(TokenType::PowerEquals, 2);
+            return eat_then_compile(TokenType::Power);
+
         case '.': return eat_then_compile(TokenType::Period);
         case ',': return eat_then_compile(TokenType::Comma);
         case ':': return eat_then_compile(TokenType::Colon);

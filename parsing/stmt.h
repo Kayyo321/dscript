@@ -145,8 +145,8 @@ public:
 
 class WhileStmt : public Stmt {
 public:
-    WhileStmt(ExprPtr condition, StmtPtr body)
-        : condition(std::move(condition)), body(std::move(body)) {}
+    WhileStmt(ExprPtr condition, StmtPtr body, StmtPtr finally_clause)
+        : condition(std::move(condition)), body(std::move(body)), finally_clause(std::move(finally_clause)) {}
 
     Value accept(AVisitor *visitor) override {
         return visitor->visit_while_stmt(this);
@@ -154,12 +154,13 @@ public:
 
     ExprPtr condition;
     StmtPtr body;
+    StmtPtr finally_clause;
 };
 
 class ForStmt : public Stmt {
 public:
-    ForStmt(StmtPtr init, ExprPtr condition, ExprPtr inc, StmtPtr body)
-        : init(std::move(init)), condition(std::move(condition)), inc(std::move(inc)), body(std::move(body)) {}
+    ForStmt(StmtPtr init, ExprPtr condition, ExprPtr inc, StmtPtr body, StmtPtr finally_clause)
+        : init(std::move(init)), condition(std::move(condition)), inc(std::move(inc)), body(std::move(body)), finally_clause(std::move(finally_clause)) {}
 
     Value accept(AVisitor *visitor) override {
         return visitor->visit_for_stmt(this);
@@ -169,6 +170,7 @@ public:
     ExprPtr condition;
     ExprPtr inc;
     StmtPtr body;
+    StmtPtr finally_clause;
 };
 
 class DefStmt : public Stmt {

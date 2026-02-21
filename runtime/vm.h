@@ -54,6 +54,7 @@ public:
 	Value visit_super_expr(SuperExpr *expr) override;
 	Value visit_self_expr(SelfExpr *expr) override;
 	Value visit_unary_expr(UnaryExpr *expr) override;
+	Value visit_update_expr(UpdateExpr *expr) override;
 	Value visit_variable_expr(VariableExpr *expr) override;
 
 private:

@@ -34,6 +34,7 @@ class SetExpr;
 class SuperExpr;
 class SelfExpr;
 class UnaryExpr;
+class UpdateExpr;
 class VariableExpr;
 
 class AVisitor {
@@ -67,6 +68,7 @@ public:
     virtual Value visit_super_expr(SuperExpr *expr) = 0;
     virtual Value visit_self_expr(SelfExpr *expr) = 0;
     virtual Value visit_unary_expr(UnaryExpr *expr) = 0;
+    virtual Value visit_update_expr(UpdateExpr *expr) = 0;
     virtual Value visit_variable_expr(VariableExpr *expr) = 0;
 };
 

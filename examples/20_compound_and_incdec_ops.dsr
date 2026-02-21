@@ -1,0 +1,51 @@
+fn main() {
+    log('== compound + inc/dec ==');
+
+    let x = 10;
+    x += 5;
+    x -= 3;
+    x *= 2;
+    x /= 4;
+    x %= 3;
+    x ^= 4;
+    log('x final (expect 0):');
+    log(x);
+
+    let a = 5;
+    log('pre ++a (expect 6):');
+    log(++a);
+    log('a now (expect 6):');
+    log(a);
+
+    let b = 5;
+    log('post b++ (expect 5):');
+    log(b++);
+    log('b now (expect 6):');
+    log(b);
+
+    let c = 5;
+    log('pre --c (expect 4):');
+    log(--c);
+    log('c now (expect 4):');
+    log(c);
+
+    let d = 5;
+    log('post d-- (expect 5):');
+    log(d--);
+    log('d now (expect 4):');
+    log(d);
+
+    let p = 1;
+    let q = p++ + 10;
+    log('q from p++ + 10 (expect 11):');
+    log(q);
+    log('p after expression (expect 2):');
+    log(p);
+
+    let r = 1;
+    let s = ++r + 10;
+    log('s from ++r + 10 (expect 12):');
+    log(s);
+    log('r after expression (expect 2):');
+    log(r);
+}
