@@ -21,5 +21,5 @@ Value Obj::index(const Value &key){
     this->print(ss);
     ss << "' is not indexable.";
     
-    throw RuntimeError(ss.str());
+    throw IndexError(ss.str());
 }

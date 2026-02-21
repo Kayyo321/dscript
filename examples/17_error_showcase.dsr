@@ -1,0 +1,6 @@
+fn main() {
+    log('== error showcase ==');
+
+    let x = 1;
+    log(x['bad']);
+}

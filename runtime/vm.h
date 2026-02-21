@@ -15,6 +15,8 @@
 #include "../parsing/expr.h"
 #include "../parsing/stmt.h"
 
+class RuntimeError;
+
 class Vm : public AVisitor {
 public:
 	Vm();
@@ -22,6 +24,7 @@ public:
 	void interpret(const std::vector<StmtPtr> &statements);
 	void execute_block(const std::vector<StmtPtr> &statements, const std::shared_ptr<Environment> &environment);
 	void set_locals(const std::unordered_map<const Expr *, int> &resolved_locals);
+	void set_source(std::string path, std::vector<std::string> lines);
 	bool invoke_main_if_present();
 
 	Value visit_block_stmt(BlockStmt *stmt) override;
@@ -57,6 +60,7 @@ private:
 	Value evaluate(const ExprPtr &expr);
 	void execute(const StmtPtr &stmt);
 	Value lookup_variable(const Token &name, const Expr *expr) const;
+	std::string format_runtime_error(const RuntimeError &error) const;
 
 	static bool is_truthy(const Value &value);
 	static bool is_equal(const Value &left, const Value &right);
@@ -68,6 +72,8 @@ private:
 	std::shared_ptr<Environment> globals;
 	std::shared_ptr<Environment> environment;
 	std::unordered_map<const Expr *, int> locals;
+	std::string source_path;
+	std::vector<std::string> source_lines;
 };
 
 #endif //DSCRIPT_VM_H

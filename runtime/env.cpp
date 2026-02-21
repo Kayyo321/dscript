@@ -9,7 +9,7 @@ Value Environment::get(const std::string &name) {
     } else if (enclosing != nullptr) {
         return enclosing->get(name);
     } else {
-        throw RuntimeError("Undefined variable '" + name + "'.");
+        throw NameError("Undefined variable '" + name + "'.");
     }
 }
 
@@ -17,7 +17,7 @@ Value Environment::get_at(int distance, const std::string &name) {
     auto env = ancestor(distance);
     const auto it = env->values.find(name);
     if (it == env->values.end()) {
-        throw RuntimeError("Undefined variable '" + name + "'.");
+        throw NameError("Undefined variable '" + name + "'.");
     }
     return it->second;
 }
@@ -33,7 +33,7 @@ void Environment::assign(const std::string &name, Value value) {
     } else if (enclosing != nullptr) {
         enclosing->assign(name, std::move(value));
     } else {
-        throw RuntimeError("Undefined variable '" + name + "'.");
+        throw NameError("Undefined variable '" + name + "'.");
     }
 }
 

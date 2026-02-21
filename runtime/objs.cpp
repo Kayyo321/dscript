@@ -22,17 +22,17 @@ void ObjString::print(std::ostream &os) {
 
 Value ObjString::index(const Value &key) {
     if (key.type != ValueType::Number) {
-        throw RuntimeError("String index must be a number.");
+        throw TypeError("String index must be a number.");
     }
 
     const double index_d = key.as.number;
     if (std::floor(index_d) != index_d) {
-        throw RuntimeError("String index must be an integer.");
+        throw IndexError("String index must be an integer.");
     }
 
     const int index = static_cast<int>(index_d);
     if (index < 0 || index >= static_cast<int>(chars.size())) {
-        throw RuntimeError("String index out of bounds.");
+        throw IndexError("String index out of bounds.");
     }
 
     return Value::object(std::make_shared<ObjString>(std::string(1, chars[index])));
@@ -99,7 +99,7 @@ void ObjFunction::print(std::ostream &os) {
 
 Value ObjFunction::index(const Value &key) {
     if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
-        throw RuntimeError("Function index key must be a string.");
+        throw TypeError("Function index key must be a string.");
     }
 
     const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
@@ -115,7 +115,7 @@ Value ObjFunction::index(const Value &key) {
         return Value::boolean(is_init);
     }
 
-    throw RuntimeError("Unknown function index key '" + key_string->chars + "'.");
+    throw IndexError("Unknown function index key '" + key_string->chars + "'.");
 }
 
 ObjNative::ObjNative(const int arity, NativeFn function)
@@ -143,7 +143,7 @@ void ObjNative::print(std::ostream &os) {
 
 Value ObjNative::index(const Value &key) {
     if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
-        throw RuntimeError("Native function index key must be a string.");
+        throw TypeError("Native function index key must be a string.");
     }
 
     const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
@@ -151,7 +151,7 @@ Value ObjNative::index(const Value &key) {
         return Value::number(arity());
     }
 
-    throw RuntimeError("Unknown native function index key '" + key_string->chars + "'.");
+    throw IndexError("Unknown native function index key '" + key_string->chars + "'.");
 }
 
 ObjClass::ObjClass(std::string name, std::map<std::string, std::shared_ptr<ObjFunction>> methods)
@@ -197,7 +197,7 @@ void ObjClass::print(std::ostream &os) {
 
 Value ObjClass::index(const Value &key) {
     if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
-        throw RuntimeError("Class index key must be a string.");
+        throw TypeError("Class index key must be a string.");
     }
 
     const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
@@ -206,7 +206,7 @@ Value ObjClass::index(const Value &key) {
         return Value::object(method);
     }
 
-    throw RuntimeError("Undefined class method '" + key_string->chars + "'.");
+    throw PropertyError("Undefined class method '" + key_string->chars + "'.");
 }
 
 ObjInstance::ObjInstance(std::shared_ptr<ObjClass> klass)
@@ -222,7 +222,7 @@ void ObjInstance::print(std::ostream &os) {
 
 Value ObjInstance::index(const Value &key) {
     if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
-        throw RuntimeError("Instance index key must be a string.");
+        throw TypeError("Instance index key must be a string.");
     }
 
     const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
@@ -240,7 +240,7 @@ Value ObjInstance::get(const std::string &field_name) {
         return Value::object(method->bind(this));
     }
 
-    throw RuntimeError("Undefined property '" + field_name + "'.");
+    throw PropertyError("Undefined property '" + field_name + "'.");
 }
 
 void ObjInstance::set(const std::string &field_name, Value value) {
@@ -272,17 +272,17 @@ void List::print(std::ostream &os) {
 
 Value List::index(const Value &key) {
     if (key.type != ValueType::Number) {
-        throw RuntimeError("List index must be a number.");
+        throw TypeError("List index must be a number.");
     }
 
     const double index_d = key.as.number;
     if (std::floor(index_d) != index_d) {
-        throw RuntimeError("List index must be an integer.");
+        throw IndexError("List index must be an integer.");
     }
 
     const int index = static_cast<int>(index_d);
     if (index < 0 || index >= static_cast<int>(elements.size())) {
-        throw RuntimeError("List index out of bounds.");
+        throw IndexError("List index out of bounds.");
     }
 
     return elements[index];

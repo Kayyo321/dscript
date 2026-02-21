@@ -7,6 +7,25 @@
 
 #include "throwables.h"
 
+static const char *kind_to_string(const RuntimeErrorKind kind) {
+	switch (kind) {
+		case RuntimeErrorKind::Type:
+			return "TypeError";
+		case RuntimeErrorKind::Name:
+			return "NameError";
+		case RuntimeErrorKind::Call:
+			return "CallError";
+		case RuntimeErrorKind::Arity:
+			return "ArityError";
+		case RuntimeErrorKind::Property:
+			return "PropertyError";
+		case RuntimeErrorKind::Index:
+			return "IndexError";
+		default:
+			return "RuntimeError";
+	}
+}
+
 Vm::Vm()
 	: globals(std::make_shared<Environment>()), environment(globals) {}
 
@@ -16,7 +35,7 @@ void Vm::interpret(const std::vector<StmtPtr> &statements) {
 			execute(statement);
 		}
 	} catch (const RuntimeError &error) {
-		std::cerr << "RuntimeError: " << error.what() << '\n';
+		std::cerr << format_runtime_error(error) << '\n';
 	}
 }
 
@@ -40,20 +59,54 @@ void Vm::set_locals(const std::unordered_map<const Expr *, int> &resolved_locals
 	locals = resolved_locals;
 }
 
+void Vm::set_source(std::string path, std::vector<std::string> lines) {
+	source_path = std::move(path);
+	source_lines = std::move(lines);
+}
+
+std::string Vm::format_runtime_error(const RuntimeError &error) const {
+	std::ostringstream oss;
+	oss << kind_to_string(error.kind);
+
+	if (error.location.has_value()) {
+		oss << " [line " << error.location->line_no << ", col " << error.location->column_no << "]";
+	}
+
+	oss << ": " << error.what();
+
+	if (error.location.has_value()) {
+		const std::size_t line_no = error.location->line_no;
+		const std::size_t col_no = error.location->column_no;
+
+		if (line_no >= 1 && line_no <= source_lines.size()) {
+			const std::string &line = source_lines[line_no - 1];
+			oss << '\n' << line_no << " | " << line;
+
+			oss << "\n  | ";
+			if (col_no > 1) {
+				oss << std::string(col_no - 1, ' ');
+			}
+			oss << "^~~~~~";
+		}
+	}
+
+	return oss.str();
+}
+
 bool Vm::invoke_main_if_present() {
 	try {
 		const Value main = globals->get("main");
 		if (main.type != ValueType::Object) {
-			throw RuntimeError("'main' exists but is not callable.");
+			throw CallError("'main' exists but is not callable.");
 		}
 
 		const auto callable = std::dynamic_pointer_cast<Callable>(main.as.object);
 		if (callable == nullptr) {
-			throw RuntimeError("'main' exists but is not callable.");
+			throw CallError("'main' exists but is not callable.");
 		}
 
 		if (callable->arity() != 0) {
-			throw RuntimeError("'main' must take 0 arguments.");
+			throw ArityError("'main' must take 0 arguments.");
 		}
 
 		callable->call(this, {});
@@ -64,7 +117,7 @@ bool Vm::invoke_main_if_present() {
 			return false;
 		}
 
-		std::cerr << "RuntimeError: " << error.what() << '\n';
+		std::cerr << format_runtime_error(error) << '\n';
 		return false;
 	}
 }
@@ -81,12 +134,12 @@ Value Vm::visit_class_stmt(ClassStmt *stmt) {
 	if (stmt->super_class != nullptr) {
 		super_class = evaluate(stmt->super_class);
 		if (super_class.type != ValueType::Object) {
-			throw RuntimeError("Superclass must be a class.");
+			throw TypeError("Superclass must be a class.", stmt->name.file_pos);
 		}
 
 		super_class_obj = std::dynamic_pointer_cast<ObjClass>(super_class.as.object);
 		if (super_class_obj == nullptr) {
-			throw RuntimeError("Superclass must be a class.");
+			throw TypeError("Superclass must be a class.", stmt->name.file_pos);
 		}
 	}
 
@@ -222,7 +275,7 @@ Value Vm::visit_binary_expr(BinaryExpr *expr) {
 				return Value::object(std::make_shared<ObjString>(lhs->chars + rhs->chars));
 			}
 
-			throw RuntimeError("Operands to '+' must both be numbers or strings.");
+			throw TypeError("Operands to '+' must both be numbers or strings.", expr->op.file_pos);
 
 		case TokenType::Minus:
 			assert_number_operands(expr->op, left, right);
@@ -280,12 +333,12 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 	const Value callee = evaluate(expr->callee);
 
 	if (callee.type != ValueType::Object) {
-		throw RuntimeError("Can only call callable objects.");
+		throw CallError("Can only call callable objects.", expr->paren.file_pos);
 	}
 
 	const auto callable = std::dynamic_pointer_cast<Callable>(callee.as.object);
 	if (callable == nullptr) {
-		throw RuntimeError("Can only call callable objects.");
+		throw CallError("Can only call callable objects.", expr->paren.file_pos);
 	}
 
 	std::vector<Value> args;
@@ -309,7 +362,7 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 		const std::size_t max_total = param_count + block_count;
 
 		if (positional_arguments.size() < required_total || positional_arguments.size() > max_total) {
-			throw RuntimeError("Argument count mismatch.");
+			throw ArityError("Argument count mismatch.", expr->paren.file_pos);
 		}
 
 		for (std::size_t i = 0; i < param_count; ++i) {
@@ -359,7 +412,7 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 			for (const auto &[name, value] : named_block_arguments) {
 				(void) value;
 				if (used_named_blocks.find(name) == used_named_blocks.end()) {
-					throw RuntimeError("Unknown named block '" + name + "'.");
+					throw CallError("Unknown named block '" + name + "'.", expr->paren.file_pos);
 				}
 			}
 
@@ -373,7 +426,7 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 		}
 
 		if (static_cast<int>(args.size()) != callable->arity()) {
-			throw RuntimeError("Argument count mismatch.");
+			throw ArityError("Argument count mismatch.", expr->paren.file_pos);
 		}
 	}
 
@@ -391,7 +444,7 @@ Value Vm::visit_index_expr(IndexExpr *expr) {
 	const Value key = evaluate(expr->key);
 
 	if (obj.type != ValueType::Object) {
-		throw RuntimeError("Only objects are indexable.");
+		throw TypeError("Only objects are indexable.", expr->bracket.file_pos);
 	}
 
 	return obj.as.object->index(key);
@@ -415,12 +468,12 @@ Value Vm::visit_named_block_expr(NamedBlockExpr *expr) {
 Value Vm::visit_get_expr(GetExpr *expr) {
 	const Value obj = evaluate(expr->obj);
 	if (obj.type != ValueType::Object) {
-		throw RuntimeError("Only instances have properties.");
+		throw TypeError("Only instances have properties.", expr->name.file_pos);
 	}
 
 	const auto instance = std::dynamic_pointer_cast<ObjInstance>(obj.as.object);
 	if (instance == nullptr) {
-		throw RuntimeError("Only instances have properties.");
+		throw TypeError("Only instances have properties.", expr->name.file_pos);
 	}
 
 	return instance->get(expr->name.literal.lexeme);
@@ -453,12 +506,12 @@ Value Vm::visit_logical_expr(LogicalExpr *expr) {
 Value Vm::visit_set_expr(SetExpr *expr) {
 	const Value obj = evaluate(expr->obj);
 	if (obj.type != ValueType::Object) {
-		throw RuntimeError("Only instances have fields.");
+		throw TypeError("Only instances have fields.", expr->name.file_pos);
 	}
 
 	const auto instance = std::dynamic_pointer_cast<ObjInstance>(obj.as.object);
 	if (instance == nullptr) {
-		throw RuntimeError("Only instances have fields.");
+		throw TypeError("Only instances have fields.", expr->name.file_pos);
 	}
 
 	const Value value = evaluate(expr->value);
@@ -469,7 +522,7 @@ Value Vm::visit_set_expr(SetExpr *expr) {
 Value Vm::visit_super_expr(SuperExpr *expr) {
 	const auto super_it = locals.find(expr);
 	if (super_it == locals.end()) {
-		throw RuntimeError("Unable to resolve 'super'.");
+		throw NameError("Unable to resolve 'super'.", expr->keyword.file_pos);
 	}
 
 	const int distance = super_it->second;
@@ -481,7 +534,7 @@ Value Vm::visit_super_expr(SuperExpr *expr) {
 
 	const auto method = super_class->find_method(expr->method.literal.lexeme);
 	if (method == nullptr) {
-		throw RuntimeError("Undefined property '" + expr->method.literal.lexeme + "'.");
+		throw PropertyError("Undefined property '" + expr->method.literal.lexeme + "'.", expr->method.file_pos);
 	}
 
 	return Value::object(method->bind(instance.get()));
@@ -575,14 +628,14 @@ bool Vm::is_type_match(const Value &left, const Value &right) {
 void Vm::assert_number_operand(const Token &op, const Value &value) {
 	(void) op;
 	if (value.type != ValueType::Number) {
-		throw RuntimeError("Operand must be a number.");
+		throw TypeError("Operand must be a number.", op.file_pos);
 	}
 }
 
 void Vm::assert_number_operands(const Token &op, const Value &left, const Value &right) {
 	(void) op;
 	if (left.type != ValueType::Number || right.type != ValueType::Number) {
-		throw RuntimeError("Operands must be numbers.");
+		throw TypeError("Operands must be numbers.", op.file_pos);
 	}
 }
 
