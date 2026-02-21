@@ -1,0 +1,10 @@
+fn main() {
+    log('== string escapes ==');
+
+    log('line1\nline2');
+    log('tab:\tend');
+    log("quote:\" single:' slash:\\\\");
+    log('hex A: \x41');
+    log('unicode heart: \u2665');
+    log('unicode grin: \U0001F600');
+}

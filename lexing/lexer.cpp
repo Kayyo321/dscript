@@ -42,7 +42,19 @@ Token Lexer::string() {
     const char symbol = peek(0);
     next(false); // don't add " (or ') to the buffer
 
-    while (peek(0) != symbol && !is_at_end()) {
+    while (!is_at_end()) {
+        if (peek(0) == symbol) {
+            break;
+        }
+
+        if (peek(0) == '\\') {
+            next(true);
+            if (!is_at_end()) {
+                next(true);
+            }
+            continue;
+        }
+
         next(true);
     }
 

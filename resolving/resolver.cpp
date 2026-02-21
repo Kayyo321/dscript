@@ -153,6 +153,25 @@ Value Resolver::visit_def_stmt(DefStmt *stmt) {
     return Value::none();
 }
 
+Value Resolver::visit_import_stmt(ImportStmt *stmt) {
+    declare(stmt->alias);
+    define(stmt->alias);
+    return Value::none();
+}
+
+Value Resolver::visit_from_import_stmt(FromImportStmt *stmt) {
+    for (const ImportName &name : stmt->names) {
+        declare(name.alias);
+        define(name.alias);
+    }
+    return Value::none();
+}
+
+Value Resolver::visit_export_stmt(ExportStmt *stmt) {
+    resolve(stmt->declaration);
+    return Value::none();
+}
+
 Value Resolver::visit_assign_expr(AssignExpr *expr) {
     resolve(expr->value);
     resolve_local(expr, expr->name);

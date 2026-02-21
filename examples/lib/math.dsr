@@ -1,0 +1,27 @@
+export let version = '1.0.0';
+
+export fn add(a, b) {
+    return a + b;
+}
+
+export fn sub(a, b) {
+    return a - b;
+}
+
+export def times(a, b) {
+    return a * b;
+}
+
+export class Counter {
+    fn init(start) {
+        self.value = start;
+    }
+
+    fn inc() {
+        self.value++;
+    }
+
+    fn get() {
+        return self.value;
+    }
+}

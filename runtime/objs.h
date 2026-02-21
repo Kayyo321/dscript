@@ -16,6 +16,7 @@
 
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <memory>
@@ -129,6 +130,21 @@ public:
     Value index(const Value &key) override;
 
     std::vector<Value> elements;
+};
+
+class ObjModule : public Obj {
+public:
+    ObjModule(std::string path, std::unordered_map<std::string, Value> exports);
+
+    bool operator==(const Obj &other) override;
+    void print(std::ostream &os) override;
+    Value index(const Value &key) override;
+
+    Value get(const std::string &name) const;
+    bool has(const std::string &name) const;
+
+    std::string path;
+    std::unordered_map<std::string, Value> exports;
 };
 
 class ObjError : public Obj {

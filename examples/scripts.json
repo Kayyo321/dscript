@@ -20,5 +20,8 @@
   "examples/19_loop_finally_semantics.dsr",
   "examples/20_compound_and_incdec_ops.dsr",
   "examples/21_multi_return_and_multi_let.dsr",
-  "examples/22_error_object_and_stderr.dsr"
+  "examples/22_error_object_and_stderr.dsr",
+  "examples/23_imports_and_modules.dsr",
+  "examples/24_stdlib_io.dsr",
+  "examples/25_string_escapes.dsr"
 ]

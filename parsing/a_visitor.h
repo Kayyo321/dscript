@@ -18,6 +18,9 @@ class LetStmt;
 class WhileStmt;
 class ForStmt;
 class DefStmt;
+class ImportStmt;
+class FromImportStmt;
+class ExportStmt;
 
 class AssignExpr;
 class BinaryExpr;
@@ -52,6 +55,9 @@ public:
     virtual Value visit_while_stmt(WhileStmt *stmt) = 0;
     virtual Value visit_for_stmt(ForStmt *stmt) = 0;
     virtual Value visit_def_stmt(DefStmt *stmt) = 0;
+    virtual Value visit_import_stmt(ImportStmt *stmt) = 0;
+    virtual Value visit_from_import_stmt(FromImportStmt *stmt) = 0;
+    virtual Value visit_export_stmt(ExportStmt *stmt) = 0;
 
     virtual Value visit_assign_expr(AssignExpr *expr) = 0;
     virtual Value visit_binary_expr(BinaryExpr *expr) = 0;

@@ -205,4 +205,49 @@ public:
     std::vector<StmtPtr> body;
 };
 
+class ImportStmt : public Stmt {
+public:
+    ImportStmt(Token keyword, Token path, Token alias)
+        : keyword(std::move(keyword)), path(std::move(path)), alias(std::move(alias)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_import_stmt(this);
+    }
+
+    Token keyword;
+    Token path;
+    Token alias;
+};
+
+struct ImportName {
+    Token name;
+    Token alias;
+};
+
+class FromImportStmt : public Stmt {
+public:
+    FromImportStmt(Token keyword, Token path, std::vector<ImportName> names)
+        : keyword(std::move(keyword)), path(std::move(path)), names(std::move(names)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_from_import_stmt(this);
+    }
+
+    Token keyword;
+    Token path;
+    std::vector<ImportName> names;
+};
+
+class ExportStmt : public Stmt {
+public:
+    explicit ExportStmt(StmtPtr declaration)
+        : declaration(std::move(declaration)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_export_stmt(this);
+    }
+
+    StmtPtr declaration;
+};
+
 #endif //DSCRIPT_STMT_H

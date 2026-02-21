@@ -1,0 +1,26 @@
+import io as io;
+
+fn main() {
+    log('== stdlib io ==');
+
+    let path = 'examples/io_demo_tmp.txt';
+
+    if io.exists(path) then {
+        io.remove(path);
+    }
+
+    io.write_file(path, 'hello');
+    io.append_file(path, ' world');
+
+    let data = io.read_file(path);
+    log('file data:');
+    log(data);
+
+    let files = io.list_dir('examples');
+    log('example dir entries count-ish (list object):');
+    log(files);
+
+    io.remove(path);
+
+    log('io.input available as: io.input(prompt)');
+}

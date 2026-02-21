@@ -28,6 +28,9 @@ public:
     Value visit_while_stmt(WhileStmt *stmt) override;
     Value visit_for_stmt(ForStmt *stmt) override;
     Value visit_def_stmt(DefStmt *stmt) override;
+    Value visit_import_stmt(ImportStmt *stmt) override;
+    Value visit_from_import_stmt(FromImportStmt *stmt) override;
+    Value visit_export_stmt(ExportStmt *stmt) override;
 
     Value visit_assign_expr(AssignExpr *expr) override;
     Value visit_binary_expr(BinaryExpr *expr) override;

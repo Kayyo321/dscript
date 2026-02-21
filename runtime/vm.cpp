@@ -1,10 +1,16 @@
 #include "vm.h"
 
 #include <cmath>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <set>
 #include <sstream>
 
+#include "../lexing/lexer.h"
+#include "../parsing/parser.h"
+#include "../resolving/resolver.h"
+#include "stdlibs/registry.h"
 #include "throwables.h"
 
 static const char *kind_to_string(const RuntimeErrorKind kind) {
@@ -24,6 +30,135 @@ static const char *kind_to_string(const RuntimeErrorKind kind) {
 		default:
 			return "RuntimeError";
 	}
+}
+
+static std::size_t compute_highlight_length(const std::string &line, const std::size_t col_no) {
+	if (line.empty()) {
+		return 1;
+	}
+
+	if (col_no == 0) {
+		return 1;
+	}
+
+	const std::size_t start = col_no - 1;
+	if (start >= line.size()) {
+		return 1;
+	}
+
+	const char c = line[start];
+
+	auto is_ident_char = [](const char ch) {
+		return std::isalnum(static_cast<unsigned char>(ch)) || ch == '_' || ch == '$' || ch == '%';
+	};
+
+	auto is_operator_char = [](const char ch) {
+		switch (ch) {
+			case '+':
+			case '-':
+			case '*':
+			case '/':
+			case '%':
+			case '^':
+			case '=':
+			case '!':
+			case '<':
+			case '>':
+			case '&':
+			case '|':
+			case '.':
+				return true;
+			default:
+				return false;
+		}
+	};
+
+	std::size_t end = start;
+
+	if (c == '\'' || c == '"') {
+		const char quote = c;
+		++end;
+		while (end < line.size()) {
+			if (line[end] == '\\' && end + 1 < line.size()) {
+				end += 2;
+				continue;
+			}
+
+			if (line[end] == quote) {
+				++end;
+				break;
+			}
+
+			++end;
+		}
+	} else if (is_ident_char(c)) {
+		while (end < line.size() && is_ident_char(line[end])) {
+			++end;
+		}
+
+		while (end < line.size()) {
+			if (line[end] == '.') {
+				std::size_t i = end + 1;
+				if (i < line.size() && is_ident_char(line[i])) {
+					while (i < line.size() && is_ident_char(line[i])) {
+						++i;
+					}
+					end = i;
+					continue;
+				}
+			}
+
+			if (line[end] == '[') {
+				std::size_t i = end;
+				int depth = 0;
+				while (i < line.size()) {
+					if (line[i] == '[') {
+						++depth;
+					} else if (line[i] == ']') {
+						--depth;
+						if (depth == 0) {
+							++i;
+							break;
+						}
+					}
+					++i;
+				}
+				end = i;
+				continue;
+			}
+
+			break;
+		}
+	} else if (is_operator_char(c)) {
+		while (end < line.size() && is_operator_char(line[end])) {
+			++end;
+		}
+	} else if (c == '[') {
+		std::size_t i = end;
+		int depth = 0;
+		while (i < line.size()) {
+			if (line[i] == '[') {
+				++depth;
+			} else if (line[i] == ']') {
+				--depth;
+				if (depth == 0) {
+					++i;
+					break;
+				}
+			}
+			++i;
+		}
+		end = i;
+	} else {
+		++end;
+	}
+
+	std::size_t length = end > start ? (end - start) : 1;
+	if (length > 80) {
+		length = 80;
+	}
+
+	return length;
 }
 
 static Value native_error(const std::vector<Value> &args) {
@@ -80,6 +215,130 @@ void Vm::set_source(std::string path, std::vector<std::string> lines) {
 	source_lines = std::move(lines);
 }
 
+std::string Vm::resolve_module_path(const std::string &raw_path) const {
+	namespace fs = std::filesystem;
+	fs::path import_path(raw_path);
+
+	if (import_path.is_absolute()) {
+		return fs::weakly_canonical(import_path).string();
+	}
+
+	fs::path base_dir = source_path.empty() ? fs::current_path() : fs::path(source_path).parent_path();
+	return fs::weakly_canonical(base_dir / import_path).string();
+}
+
+std::vector<std::string> Vm::read_module_lines(const std::string &path) const {
+	std::ifstream in(path);
+	if (!in.is_open()) {
+		throw NameError("Could not open module '" + path + "'.");
+	}
+
+	std::vector<std::string> lines;
+	std::string line;
+	while (std::getline(in, line)) {
+		lines.push_back(line);
+	}
+
+	return lines;
+}
+
+std::shared_ptr<ObjModule> Vm::load_stdlib_module(const std::string &name, const FilePos &location) {
+	const auto &registry = get_stdlib_registry();
+	const auto factory_it = registry.find(name);
+	if (factory_it == registry.end()) {
+		throw NameError("Unknown stdlib module '" + name + "'.", location);
+	}
+
+	const std::string cache_key = "std:" + name;
+	if (const auto cache_it = module_cache.find(cache_key); cache_it != module_cache.end()) {
+		return cache_it->second;
+	}
+
+	auto module = std::make_shared<ObjModule>(cache_key, factory_it->second());
+	module_cache.insert_or_assign(cache_key, module);
+	return module;
+}
+
+std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const FilePos &location) {
+	if (get_stdlib_registry().find(raw_path) != get_stdlib_registry().end()) {
+		return load_stdlib_module(raw_path, location);
+	}
+
+	const std::string resolved_path = resolve_module_path(raw_path);
+	if (const auto it = module_cache.find(resolved_path); it != module_cache.end()) {
+		return it->second;
+	}
+
+	if (loading_modules.find(resolved_path) != loading_modules.end()) {
+		throw CallError("Circular import detected for module '" + resolved_path + "'.", location);
+	}
+
+	loading_modules.insert(resolved_path);
+
+	const std::string previous_source_path = source_path;
+	const std::vector<std::string> previous_source_lines = source_lines;
+	const auto previous_environment = environment;
+	const auto previous_locals = locals;
+	auto previous_exports = active_module_exports;
+
+	try {
+		FileLexer lexer(resolved_path);
+		const std::vector<StmtPtr> statements = parse(lexer);
+		if (lexer.had_error) {
+			throw CallError("Lexing failed while loading module '" + resolved_path + "'.", location);
+		}
+
+		Resolver resolver;
+		resolver.resolve(statements);
+		if (resolver.had_error()) {
+			std::ostringstream error;
+			error << "Resolver errors in module '" << resolved_path << "': ";
+			const auto &errors = resolver.get_errors();
+			for (std::size_t i = 0; i < errors.size(); ++i) {
+				error << errors[i];
+				if (i + 1 < errors.size()) {
+					error << " | ";
+				}
+			}
+			throw CallError(error.str(), location);
+		}
+
+		locals = resolver.get_locals();
+		source_path = resolved_path;
+		source_lines = read_module_lines(resolved_path);
+
+		auto module_env = std::make_shared<Environment>(globals);
+		environment = module_env;
+
+		std::unordered_map<std::string, Value> exports;
+		active_module_exports = &exports;
+
+		for (const auto &statement : statements) {
+			execute(statement);
+		}
+
+		auto module = std::make_shared<ObjModule>(resolved_path, exports);
+		module_cache.insert_or_assign(resolved_path, module);
+
+		environment = previous_environment;
+		locals = previous_locals;
+		source_path = previous_source_path;
+		source_lines = previous_source_lines;
+		active_module_exports = previous_exports;
+		loading_modules.erase(resolved_path);
+
+		return module;
+	} catch (...) {
+		environment = previous_environment;
+		locals = previous_locals;
+		source_path = previous_source_path;
+		source_lines = previous_source_lines;
+		active_module_exports = previous_exports;
+		loading_modules.erase(resolved_path);
+		throw;
+	}
+}
+
 std::string Vm::format_runtime_error(const RuntimeError &error) const {
 	std::ostringstream oss;
 	oss << kind_to_string(error.kind);
@@ -96,13 +355,17 @@ std::string Vm::format_runtime_error(const RuntimeError &error) const {
 
 		if (line_no >= 1 && line_no <= source_lines.size()) {
 			const std::string &line = source_lines[line_no - 1];
+			const std::size_t highlight_len = compute_highlight_length(line, col_no);
 			oss << '\n' << line_no << " | " << line;
 
 			oss << "\n  | ";
 			if (col_no > 1) {
 				oss << std::string(col_no - 1, ' ');
 			}
-			oss << "^~~~~~";
+			oss << '^';
+			if (highlight_len > 1) {
+				oss << std::string(highlight_len - 1, '~');
+			}
 		}
 	}
 
@@ -325,6 +588,54 @@ Value Vm::visit_def_stmt(DefStmt *stmt) {
 	}
 
 	environment->define(stmt->new_keyword.literal.lexeme, Value::object(ObjFunction::basic(declaration, environment)));
+	return Value::none();
+}
+
+Value Vm::visit_import_stmt(ImportStmt *stmt) {
+	const auto module = load_module(stmt->path.literal.lexeme, stmt->path.file_pos);
+	environment->define(stmt->alias.literal.lexeme, Value::object(module));
+	return Value::none();
+}
+
+Value Vm::visit_from_import_stmt(FromImportStmt *stmt) {
+	const auto module = load_module(stmt->path.literal.lexeme, stmt->path.file_pos);
+	for (const auto &import_name : stmt->names) {
+		if (!module->has(import_name.name.literal.lexeme)) {
+			throw NameError("Module '" + module->path + "' does not export '" + import_name.name.literal.lexeme + "'.", import_name.name.file_pos);
+		}
+		environment->define(import_name.alias.literal.lexeme, module->get(import_name.name.literal.lexeme));
+	}
+	return Value::none();
+}
+
+Value Vm::visit_export_stmt(ExportStmt *stmt) {
+	execute(stmt->declaration);
+
+	if (active_module_exports == nullptr) {
+		return Value::none();
+	}
+
+	if (const auto function_stmt = std::dynamic_pointer_cast<FunctionStmt>(stmt->declaration); function_stmt != nullptr) {
+		active_module_exports->insert_or_assign(function_stmt->name.literal.lexeme, environment->get(function_stmt->name.literal.lexeme));
+		return Value::none();
+	}
+
+	if (const auto def_stmt = std::dynamic_pointer_cast<DefStmt>(stmt->declaration); def_stmt != nullptr) {
+		active_module_exports->insert_or_assign(def_stmt->new_keyword.literal.lexeme, environment->get(def_stmt->new_keyword.literal.lexeme));
+		return Value::none();
+	}
+
+	if (const auto class_stmt = std::dynamic_pointer_cast<ClassStmt>(stmt->declaration); class_stmt != nullptr) {
+		active_module_exports->insert_or_assign(class_stmt->name.literal.lexeme, environment->get(class_stmt->name.literal.lexeme));
+		return Value::none();
+	}
+
+	if (const auto let_stmt = std::dynamic_pointer_cast<LetStmt>(stmt->declaration); let_stmt != nullptr) {
+		for (const auto &name : let_stmt->names) {
+			active_module_exports->insert_or_assign(name.literal.lexeme, environment->get(name.literal.lexeme));
+		}
+	}
+
 	return Value::none();
 }
 
@@ -553,6 +864,13 @@ Value Vm::visit_get_expr(GetExpr *expr) {
 		throw TypeError("Only instances have properties.", expr->name.file_pos);
 	}
 
+	if (const auto module = std::dynamic_pointer_cast<ObjModule>(obj.as.object); module != nullptr) {
+		if (!module->has(expr->name.literal.lexeme)) {
+			throw PropertyError("Undefined exported name '" + expr->name.literal.lexeme + "'.", expr->name.file_pos);
+		}
+		return module->get(expr->name.literal.lexeme);
+	}
+
 	const auto instance = std::dynamic_pointer_cast<ObjInstance>(obj.as.object);
 	if (instance == nullptr) {
 		throw TypeError("Only instances have properties.", expr->name.file_pos);
@@ -704,7 +1022,7 @@ Value Vm::lookup_variable(const Token &name, const Expr *expr) const {
 		return environment->get_at(local->second, name.literal.lexeme);
 	}
 
-	return globals->get(name.literal.lexeme);
+	return environment->get(name.literal.lexeme);
 }
 
 bool Vm::is_truthy(const Value &value) {

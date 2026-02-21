@@ -6,6 +6,7 @@
 #define DSCRIPT_VM_H
 
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -38,6 +39,9 @@ public:
 	Value visit_while_stmt(WhileStmt *stmt) override;
 	Value visit_for_stmt(ForStmt *stmt) override;
 	Value visit_def_stmt(DefStmt *stmt) override;
+	Value visit_import_stmt(ImportStmt *stmt) override;
+	Value visit_from_import_stmt(FromImportStmt *stmt) override;
+	Value visit_export_stmt(ExportStmt *stmt) override;
 
 	Value visit_assign_expr(AssignExpr *expr) override;
 	Value visit_binary_expr(BinaryExpr *expr) override;
@@ -60,6 +64,10 @@ public:
 private:
 	Value evaluate(const ExprPtr &expr);
 	void execute(const StmtPtr &stmt);
+	std::shared_ptr<ObjModule> load_module(const std::string &raw_path, const FilePos &location);
+	std::shared_ptr<ObjModule> load_stdlib_module(const std::string &name, const FilePos &location);
+	std::string resolve_module_path(const std::string &raw_path) const;
+	std::vector<std::string> read_module_lines(const std::string &path) const;
 	Value lookup_variable(const Token &name, const Expr *expr) const;
 	std::string format_runtime_error(const RuntimeError &error) const;
 
@@ -75,6 +83,9 @@ private:
 	std::unordered_map<const Expr *, int> locals;
 	std::string source_path;
 	std::vector<std::string> source_lines;
+	std::unordered_map<std::string, std::shared_ptr<ObjModule>> module_cache;
+	std::set<std::string> loading_modules;
+	std::unordered_map<std::string, Value> *active_module_exports{nullptr};
 };
 
 #endif //DSCRIPT_VM_H

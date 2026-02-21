@@ -1,0 +1,24 @@
+import './lib/math.dsr' as math;
+from './lib/math.dsr' import add as plus, times;
+
+fn main() {
+    log('== imports + modules ==');
+
+    log('module version:');
+    log(math.version);
+
+    log('math.add(2, 3):');
+    log(math.add(2, 3));
+
+    log('plus(10, 7):');
+    log(plus(10, 7));
+
+    log('times(6, 7):');
+    log(times(6, 7));
+
+    let c = math.Counter(3);
+    c.inc();
+    c.inc();
+    log('counter value:');
+    log(c.get());
+}

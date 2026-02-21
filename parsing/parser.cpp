@@ -140,6 +140,9 @@ private:
                 case TokenType::Class:
                 case TokenType::Fn:
                 case TokenType::Def:
+                case TokenType::Import:
+                case TokenType::From:
+                case TokenType::Export:
                 case TokenType::If:
                 case TokenType::Do:
                 case TokenType::For:
@@ -297,6 +300,62 @@ private:
             return std::make_shared<DefStmt>(name, params, blocks.value(), body, false);
         }
         return std::make_shared<DefStmt>(name, params, body, false);
+    }
+
+    StmtPtr parse_import_stmt() {
+        const Token keyword = previous();
+        Token path = peek();
+        if (!(check(TokenType::String) || check(TokenType::Identifier))) {
+            throw ParseError("Expected module path or module name after 'import'.");
+        }
+        advance();
+        consume_or_throw(TokenType::As, "Expected 'as' after import path.");
+        Token alias = consume_or_throw(TokenType::Identifier, "Expected module alias after 'as'.");
+        match(TokenType::Semicolon);
+        return std::make_shared<ImportStmt>(keyword, path, alias);
+    }
+
+    StmtPtr parse_from_stmt() {
+        const Token keyword = previous();
+        Token path = peek();
+        if (!(check(TokenType::String) || check(TokenType::Identifier))) {
+            throw ParseError("Expected module path or module name after 'from'.");
+        }
+        advance();
+        consume_or_throw(TokenType::Import, "Expected 'import' after module path.");
+
+        std::vector<ImportName> names;
+        do {
+            Token name = consume_or_throw(TokenType::Identifier, "Expected imported name.");
+            Token alias = name;
+            if (match(TokenType::As)) {
+                alias = consume_or_throw(TokenType::Identifier, "Expected alias name after 'as'.");
+            }
+            names.push_back(ImportName{name, alias});
+        } while (match(TokenType::Comma));
+
+        match(TokenType::Semicolon);
+        return std::make_shared<FromImportStmt>(keyword, path, names);
+    }
+
+    StmtPtr parse_export_stmt() {
+        if (match(TokenType::Fn)) {
+            return std::make_shared<ExportStmt>(parse_fn_stmt());
+        }
+
+        if (match(TokenType::Def)) {
+            return std::make_shared<ExportStmt>(parse_def_stmt());
+        }
+
+        if (match(TokenType::Class)) {
+            return std::make_shared<ExportStmt>(parse_class_stmt());
+        }
+
+        if (match(TokenType::Let)) {
+            return std::make_shared<ExportStmt>(parse_let_stmt());
+        }
+
+        throw ParseError("Expected declaration after 'export'.");
     }
 
     StmtPtr parse_if_stmt() {
@@ -788,6 +847,9 @@ const std::unordered_map<TokenType, Parser::StmtParser, Parser::EnumClassHash> P
     {TokenType::Class, &Parser::parse_class_stmt},
     {TokenType::Fn, &Parser::parse_fn_stmt},
     {TokenType::Def, &Parser::parse_def_stmt},
+    {TokenType::Import, &Parser::parse_import_stmt},
+    {TokenType::From, &Parser::parse_from_stmt},
+    {TokenType::Export, &Parser::parse_export_stmt},
     {TokenType::If, &Parser::parse_if_stmt},
     {TokenType::Do, &Parser::parse_do_stmt},
     {TokenType::While, &Parser::parse_while_stmt},

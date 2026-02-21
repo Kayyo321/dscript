@@ -288,6 +288,43 @@ Value List::index(const Value &key) {
     return elements[index];
 }
 
+ObjModule::ObjModule(std::string path, std::unordered_map<std::string, Value> exports)
+    : Obj(ObjType::Module), path(std::move(path)), exports(std::move(exports)) {}
+
+bool ObjModule::operator==(const Obj &other) {
+    if (other.get_type() != ObjType::Module) {
+        return false;
+    }
+
+    const auto &module = static_cast<const ObjModule &>(other);
+    return path == module.path;
+}
+
+void ObjModule::print(std::ostream &os) {
+    os << "<module " << path << ">";
+}
+
+Value ObjModule::index(const Value &key) {
+    if (key.type != ValueType::Object || key.as.object->get_type() != ObjType::String) {
+        throw TypeError("Module index key must be a string.");
+    }
+
+    const auto key_string = std::static_pointer_cast<ObjString>(key.as.object);
+    return get(key_string->chars);
+}
+
+Value ObjModule::get(const std::string &name) const {
+    const auto it = exports.find(name);
+    if (it == exports.end()) {
+        throw PropertyError("Undefined exported name '" + name + "'.");
+    }
+    return it->second;
+}
+
+bool ObjModule::has(const std::string &name) const {
+    return exports.find(name) != exports.end();
+}
+
 ObjError::ObjError(std::string message)
     : Obj(ObjType::Error), message(std::move(message)) {}
 
