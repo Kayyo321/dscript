@@ -236,5 +236,7 @@ CMakeFiles/dscript.dir/runtime/vm.cpp.o: \
  /usr/include/c++/15.2.1/tr1/poly_hermite.tcc \
  /usr/include/c++/15.2.1/tr1/poly_laguerre.tcc \
  /usr/include/c++/15.2.1/tr1/riemann_zeta.tcc \
- /usr/include/c++/15.2.1/iostream \
+ /usr/include/c++/15.2.1/iostream /usr/include/c++/15.2.1/set \
+ /usr/include/c++/15.2.1/bits/stl_set.h \
+ /usr/include/c++/15.2.1/bits/stl_multiset.h \
  /home/sullivanb/CLionProjects/dscript/runtime/throwables.h

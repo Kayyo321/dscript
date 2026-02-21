@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <set>
 #include <sstream>
 
 #include "throwables.h"
@@ -275,12 +276,6 @@ Value Vm::visit_binary_expr(BinaryExpr *expr) {
 Value Vm::visit_call_expr(CallExpr *expr) {
 	const Value callee = evaluate(expr->callee);
 
-	std::vector<Value> args;
-	args.reserve(expr->arguments.size());
-	for (const auto &argument : expr->arguments) {
-		args.push_back(evaluate(argument));
-	}
-
 	if (callee.type != ValueType::Object) {
 		throw RuntimeError("Can only call callable objects.");
 	}
@@ -290,8 +285,93 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 		throw RuntimeError("Can only call callable objects.");
 	}
 
-	if (static_cast<int>(args.size()) != callable->arity()) {
-		throw RuntimeError("Argument count mismatch.");
+	std::vector<Value> args;
+	args.reserve(expr->arguments.size());
+
+	if (const auto function = std::dynamic_pointer_cast<ObjFunction>(callee.as.object); function != nullptr) {
+		std::vector<ExprPtr> positional_arguments;
+		std::map<std::string, ExprPtr> named_block_arguments;
+
+		for (const auto &argument : expr->arguments) {
+			if (const auto named_block = std::dynamic_pointer_cast<NamedBlockExpr>(argument); named_block != nullptr) {
+				named_block_arguments.insert_or_assign(named_block->name.literal.lexeme, named_block->value);
+			} else {
+				positional_arguments.push_back(argument);
+			}
+		}
+
+		const std::size_t param_count = function->declaration->params.size();
+		const std::size_t block_count = function->declaration->blocks.has_value() ? function->declaration->blocks->size() : 0;
+		const std::size_t required_total = param_count;
+		const std::size_t max_total = param_count + block_count;
+
+		if (positional_arguments.size() < required_total || positional_arguments.size() > max_total) {
+			throw RuntimeError("Argument count mismatch.");
+		}
+
+		for (std::size_t i = 0; i < param_count; ++i) {
+			const ExprPtr &argument = positional_arguments[i];
+			if (function->declaration->params[i].type == TokenType::ExprIdentifier) {
+				if (std::dynamic_pointer_cast<FunctionExpr>(argument) != nullptr) {
+					args.push_back(evaluate(argument));
+				} else {
+					const Token literal_name{TokenType::Identifier, "<expr-literal>", FilePos{}};
+					std::vector<StmtPtr> body;
+					body.push_back(std::make_shared<ExpressionStmt>(argument));
+					const auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<Token>{}, body, false);
+					args.push_back(Value::object(ObjFunction::basic(declaration, environment)));
+				}
+			} else {
+				args.push_back(evaluate(argument));
+			}
+		}
+
+		if (block_count > 0) {
+			std::vector<Value> resolved_blocks(block_count, Value::none());
+			std::size_t positional_block_idx = param_count;
+
+			for (std::size_t i = 0; i < block_count && positional_block_idx < positional_arguments.size(); ++i, ++positional_block_idx) {
+				resolved_blocks[i] = evaluate(positional_arguments[positional_block_idx]);
+			}
+
+			std::set<std::string> used_named_blocks;
+			for (std::size_t i = 0; i < block_count; ++i) {
+				const auto &block = function->declaration->blocks.value()[i];
+				std::string expected_name;
+
+				if (block.expect.has_value()) {
+					expected_name = block.expect->literal.lexeme;
+				} else if (!block.name.literal.lexeme.empty() && block.name.literal.lexeme[0] == '$') {
+					expected_name = block.name.literal.lexeme.substr(1);
+				} else {
+					expected_name = block.name.literal.lexeme;
+				}
+
+				if (const auto it = named_block_arguments.find(expected_name); it != named_block_arguments.end()) {
+					resolved_blocks[i] = evaluate(it->second);
+					used_named_blocks.insert(expected_name);
+				}
+			}
+
+			for (const auto &[name, value] : named_block_arguments) {
+				(void) value;
+				if (used_named_blocks.find(name) == used_named_blocks.end()) {
+					throw RuntimeError("Unknown named block '" + name + "'.");
+				}
+			}
+
+			for (const auto &block : resolved_blocks) {
+				args.push_back(block);
+			}
+		}
+	} else {
+		for (const auto &argument : expr->arguments) {
+			args.push_back(evaluate(argument));
+		}
+
+		if (static_cast<int>(args.size()) != callable->arity()) {
+			throw RuntimeError("Argument count mismatch.");
+		}
 	}
 
 	return callable->call(this, args);
@@ -301,6 +381,10 @@ Value Vm::visit_function_expr(FunctionExpr *expr) {
 	const Token literal_name{TokenType::Identifier, "<literal>", FilePos{}};
 	auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<Token>{}, expr->body, false);
 	return Value::object(ObjFunction::basic(declaration, environment));
+}
+
+Value Vm::visit_named_block_expr(NamedBlockExpr *expr) {
+	return evaluate(expr->value);
 }
 
 Value Vm::visit_get_expr(GetExpr *expr) {

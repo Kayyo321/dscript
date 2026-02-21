@@ -41,7 +41,11 @@ Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
 
     if (declaration->blocks.has_value()) {
         for (const auto &block : declaration->blocks.value()) {
-            env->define(block.name.literal.lexeme, args[arg_idx++]);
+            const Value block_value = args[arg_idx++];
+            env->define(block.name.literal.lexeme, block_value);
+            if (block.expect.has_value()) {
+                env->define(block.expect->literal.lexeme, block_value);
+            }
         }
     }
 

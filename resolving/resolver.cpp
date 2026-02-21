@@ -164,6 +164,11 @@ Value Resolver::visit_function_expr(FunctionExpr *expr) {
     return Value::none();
 }
 
+Value Resolver::visit_named_block_expr(NamedBlockExpr *expr) {
+    resolve(expr->value);
+    return Value::none();
+}
+
 Value Resolver::visit_get_expr(GetExpr *expr) {
     resolve(expr->obj);
     return Value::none();
@@ -255,6 +260,11 @@ void Resolver::resolve_function(const std::vector<Token> &params, const std::opt
         for (const auto &block : blocks.value()) {
             declare(block.name);
             define(block.name);
+
+            if (block.expect.has_value()) {
+                declare(block.expect.value());
+                define(block.expect.value());
+            }
         }
     }
 

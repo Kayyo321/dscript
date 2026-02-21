@@ -68,6 +68,20 @@ public:
 };
 
 
+class NamedBlockExpr : public Expr {
+public:
+    NamedBlockExpr(Token name, ExprPtr value)
+        : name(std::move(name)), value(std::move(value)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_named_block_expr(this);
+    }
+
+    Token name;
+    ExprPtr value;
+};
+
+
 class GetExpr : public Expr {
 public:
     GetExpr(ExprPtr obj, Token name)

@@ -2,10 +2,18 @@ def shout(msg) {
     log('shout: ' + msg);
 }
 
+def with_block(msg) ($block) {
+    log('with_block: ' + msg);
+    $block();
+}
+
 def noop;
 
 fn main() {
     log('== def statements ==');
-    shout('hello');
+    shout 'hello';
+    with_block 'run' {
+        log('inside passed block');
+    }
     noop();
 }

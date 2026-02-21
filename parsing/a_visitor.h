@@ -23,6 +23,7 @@ class AssignExpr;
 class BinaryExpr;
 class CallExpr;
 class FunctionExpr;
+class NamedBlockExpr;
 class GetExpr;
 class GroupingExpr;
 class LiteralExpr;
@@ -53,6 +54,7 @@ public:
     virtual Value visit_binary_expr(BinaryExpr *expr) = 0;
     virtual Value visit_call_expr(CallExpr *expr) = 0;
     virtual Value visit_function_expr(FunctionExpr *expr) = 0;
+    virtual Value visit_named_block_expr(NamedBlockExpr *expr) = 0;
     virtual Value visit_get_expr(GetExpr *expr) = 0;
     virtual Value visit_grouping_expr(GroupingExpr *expr) = 0;
     virtual Value visit_literal_expr(LiteralExpr *expr) = 0;

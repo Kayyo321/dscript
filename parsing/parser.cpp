@@ -91,6 +91,14 @@ private:
         return !is_at_end() && peek().type == type;
     }
 
+    bool check_next(TokenType type) const {
+        return (current + 1 < tokens.size()) && tokens[current + 1].type == type;
+    }
+
+    bool check_next_next(TokenType type) const {
+        return (current + 2 < tokens.size()) && tokens[current + 2].type == type;
+    }
+
     bool match(TokenType type) {
         if (!check(type)) {
             return false;
@@ -133,6 +141,7 @@ private:
                 case TokenType::Fn:
                 case TokenType::Def:
                 case TokenType::If:
+                case TokenType::Do:
                 case TokenType::For:
                 case TokenType::While:
                 case TokenType::Log:
@@ -184,7 +193,8 @@ private:
             return std::nullopt;
         }
 
-        if ((current + 1 >= tokens.size()) || tokens[current + 1].type != TokenType::BlockIdentifier) {
+        if (!check_next(TokenType::BlockIdentifier)
+            && !(check_next(TokenType::Identifier) && check_next_next(TokenType::Colon))) {
             return std::nullopt;
         }
 
@@ -192,16 +202,23 @@ private:
 
         std::vector<BlockLiteral> blocks;
         while (!is_at_end() && !check(TokenType::RightParen)) {
-            Token block_name = consume_or_throw(TokenType::BlockIdentifier, "Expected block-literal parameter name.");
-
-            if (match(TokenType::Colon)) {
-                if (check(TokenType::Identifier) || check(TokenType::ExprIdentifier) || check(TokenType::BlockIdentifier)) {
-                    blocks.emplace_back(block_name, advance());
-                } else {
-                    throw ParseError("Expected block-literal expectation after ':'.");
-                }
+            if (check(TokenType::Identifier) && check_next(TokenType::Colon)) {
+                Token expected_name = advance();
+                consume_or_throw(TokenType::Colon, "Expected ':' after named block label.");
+                Token block_name = consume_or_throw(TokenType::BlockIdentifier, "Expected block-literal parameter name after ':'.");
+                blocks.emplace_back(block_name, expected_name);
             } else {
-                blocks.emplace_back(block_name);
+                Token block_name = consume_or_throw(TokenType::BlockIdentifier, "Expected block-literal parameter name.");
+
+                if (match(TokenType::Colon)) {
+                    if (check(TokenType::Identifier) || check(TokenType::ExprIdentifier) || check(TokenType::BlockIdentifier)) {
+                        blocks.emplace_back(block_name, advance());
+                    } else {
+                        throw ParseError("Expected block-literal expectation after ':'.");
+                    }
+                } else {
+                    blocks.emplace_back(block_name);
+                }
             }
 
             if (!match(TokenType::Comma)) {
@@ -293,6 +310,18 @@ private:
         }
 
         return std::make_shared<IfStmt>(condition, then_branch, else_branch);
+    }
+
+    StmtPtr parse_do_stmt() {
+        StmtPtr body = parse_stmt();
+        consume_or_throw(TokenType::While, "Expected 'while' after do-while body.");
+        ExprPtr condition = parse_expression();
+        match(TokenType::Semicolon);
+
+        std::vector<StmtPtr> statements;
+        statements.push_back(body);
+        statements.push_back(std::make_shared<WhileStmt>(condition, body));
+        return std::make_shared<BlockStmt>(statements);
     }
 
     StmtPtr parse_while_stmt() {
@@ -467,7 +496,30 @@ private:
             return std::make_shared<FunctionExpr>(body);
         }
 
-        return parse_expression();
+        if (check(TokenType::Identifier) && check_next(TokenType::Colon) && check_next_next(TokenType::LeftBrace)) {
+            Token name = advance();
+            consume_or_throw(TokenType::Colon, "Expected ':' after named block argument.");
+            consume_or_throw(TokenType::LeftBrace, "Expected '{' after named block label.");
+            return std::make_shared<NamedBlockExpr>(name, std::make_shared<FunctionExpr>(parse_block_statements()));
+        }
+
+        const bool previous_allow_implicit = allow_implicit_call;
+        allow_implicit_call = false;
+        ExprPtr argument = parse_expression();
+        allow_implicit_call = previous_allow_implicit;
+        return argument;
+    }
+
+    bool can_start_call_argument() const {
+        return check(TokenType::Let)
+            || check(TokenType::Identifier)
+            || check(TokenType::ExprIdentifier)
+            || check(TokenType::BlockIdentifier)
+            || check(TokenType::Number)
+            || check(TokenType::String)
+            || check(TokenType::LeftParen)
+            || check(TokenType::Minus)
+            || check(TokenType::Not);
     }
 
     ExprPtr parse_call() {
@@ -487,6 +539,32 @@ private:
 
                 if (match(TokenType::LeftBrace)) {
                     call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
+                    expr = call_expr;
+                    break;
+                }
+
+                expr = call_expr;
+                continue;
+            }
+
+            const std::size_t expr_line = previous().file_pos.line_no;
+            if (allow_implicit_call && can_start_call_argument() && peek().file_pos.line_no == expr_line) {
+                std::vector<ExprPtr> args;
+                args.push_back(parse_call_argument());
+
+                while (match(TokenType::Comma)) {
+                    args.push_back(parse_call_argument());
+                }
+
+                while (can_start_call_argument() && peek().file_pos.line_no == expr_line) {
+                    args.push_back(parse_call_argument());
+                }
+
+                auto call_expr = std::make_shared<CallExpr>(expr, previous(), args);
+                if (match(TokenType::LeftBrace)) {
+                    call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
+                    expr = call_expr;
+                    break;
                 }
 
                 expr = call_expr;
@@ -561,6 +639,7 @@ private:
 
     std::vector<Token> tokens{};
     std::size_t current{0};
+    bool allow_implicit_call{true};
 };
 
 const std::unordered_map<TokenType, Parser::StmtParser, Parser::EnumClassHash> Parser::kStmtDispatch = {
@@ -568,6 +647,7 @@ const std::unordered_map<TokenType, Parser::StmtParser, Parser::EnumClassHash> P
     {TokenType::Fn, &Parser::parse_fn_stmt},
     {TokenType::Def, &Parser::parse_def_stmt},
     {TokenType::If, &Parser::parse_if_stmt},
+    {TokenType::Do, &Parser::parse_do_stmt},
     {TokenType::While, &Parser::parse_while_stmt},
     {TokenType::For, &Parser::parse_for_stmt},
     {TokenType::Log, &Parser::parse_log_stmt},

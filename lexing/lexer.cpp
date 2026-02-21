@@ -111,7 +111,9 @@ Token Lexer::symbol() {
         case ']': return eat_then_compile(TokenType::RightBracket);
         case '{': return eat_then_compile(TokenType::LeftBrace);
         case '}': return eat_then_compile(TokenType::RightBrace);
-        case '=': return eat_then_compile(TokenType::Equals);
+        case '=':
+            if (peek(1) == '=') return eat_then_compile(TokenType::Is, 2);
+            else return eat_then_compile(TokenType::Equals);
 
         case '>':
             if (peek(1) == '=') return eat_then_compile(TokenType::GreaterEqual, 2);

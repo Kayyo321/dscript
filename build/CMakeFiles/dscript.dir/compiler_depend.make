@@ -2549,9 +2549,11 @@ CMakeFiles/dscript.dir/runtime/vm.cpp.o: /home/sullivanb/CLionProjects/dscript/r
   /usr/include/c++/15.2.1/bits/stl_iterator_base_types.h \
   /usr/include/c++/15.2.1/bits/stl_map.h \
   /usr/include/c++/15.2.1/bits/stl_multimap.h \
+  /usr/include/c++/15.2.1/bits/stl_multiset.h \
   /usr/include/c++/15.2.1/bits/stl_pair.h \
   /usr/include/c++/15.2.1/bits/stl_raw_storage_iter.h \
   /usr/include/c++/15.2.1/bits/stl_relops.h \
+  /usr/include/c++/15.2.1/bits/stl_set.h \
   /usr/include/c++/15.2.1/bits/stl_tempbuf.h \
   /usr/include/c++/15.2.1/bits/stl_tree.h \
   /usr/include/c++/15.2.1/bits/stl_uninitialized.h \
@@ -2605,6 +2607,7 @@ CMakeFiles/dscript.dir/runtime/vm.cpp.o: /home/sullivanb/CLionProjects/dscript/r
   /usr/include/c++/15.2.1/pstl/execution_defs.h \
   /usr/include/c++/15.2.1/pstl/glue_memory_defs.h \
   /usr/include/c++/15.2.1/pstl/pstl_config.h \
+  /usr/include/c++/15.2.1/set \
   /usr/include/c++/15.2.1/sstream \
   /usr/include/c++/15.2.1/stdexcept \
   /usr/include/c++/15.2.1/streambuf \
@@ -2727,6 +2730,12 @@ CMakeFiles/dscript.dir/parsing/parser.cpp.o:
 /usr/lib/crti.o:
 
 /usr/lib/Scrt1.o:
+
+/usr/include/c++/15.2.1/set:
+
+/usr/include/c++/15.2.1/bits/stl_set.h:
+
+/usr/include/c++/15.2.1/bits/stl_multiset.h:
 
 /usr/include/c++/15.2.1/tr1/special_function_util.h:
 

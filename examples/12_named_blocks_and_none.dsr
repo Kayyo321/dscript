@@ -1,0 +1,24 @@
+def maybe_named(value) (name: $of_a_block) {
+    log('== named blocks and none ==');
+    log(value);
+
+    if name == none then {
+        log('name == none');
+    } else {
+        name();
+    }
+
+    if $of_a_block == none then {
+        log('$of_a_block == none');
+    } else {
+        $of_a_block();
+    }
+}
+
+fn main() {
+    maybe_named 10;
+
+    maybe_named 20 name: {
+        log('named block ran');
+    }
+}
