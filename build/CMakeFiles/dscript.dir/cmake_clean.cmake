@@ -8,6 +8,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/dscript.dir/main.cpp.o.d"
   "CMakeFiles/dscript.dir/parsing/parser.cpp.o"
   "CMakeFiles/dscript.dir/parsing/parser.cpp.o.d"
+  "CMakeFiles/dscript.dir/resolving/resolver.cpp.o"
+  "CMakeFiles/dscript.dir/resolving/resolver.cpp.o.d"
   "CMakeFiles/dscript.dir/runtime/env.cpp.o"
   "CMakeFiles/dscript.dir/runtime/env.cpp.o.d"
   "CMakeFiles/dscript.dir/runtime/obj.cpp.o"
@@ -16,6 +18,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/dscript.dir/runtime/objs.cpp.o.d"
   "CMakeFiles/dscript.dir/runtime/value.cpp.o"
   "CMakeFiles/dscript.dir/runtime/value.cpp.o.d"
+  "CMakeFiles/dscript.dir/runtime/vm.cpp.o"
+  "CMakeFiles/dscript.dir/runtime/vm.cpp.o.d"
   "dscript"
   "dscript.pdb"
 )

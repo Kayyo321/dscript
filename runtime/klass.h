@@ -36,10 +36,11 @@ public:
         return init->arity();
     }
 
-    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override {
+    Value call(Vm *vm, const std::vector<Value> &args) override {
+        (void) args;
         std::shared_ptr<ObjFunction> init = find_method("init");
         if (init != nullptr) {
-            init->call(vm, args);
+            init->call(vm, {});
         }
         return Value::none();
     }

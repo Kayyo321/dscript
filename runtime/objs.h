@@ -23,7 +23,7 @@
 #include "../parsing/stmt.h"
 
 class Vm;
-class Instance;
+class ObjInstance;
 
 class ObjString : public Obj {
 public:
@@ -44,7 +44,7 @@ public:
 
     virtual int arity() { return 0; }
 
-    virtual Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) = 0;
+    virtual Value call(Vm *vm, const std::vector<Value> &args) = 0;
 };
 
 class ObjFunction: public Callable {
@@ -57,13 +57,13 @@ public:
         return std::make_shared<ObjFunction>(declaration, closure, true);
     }
 
-    std::shared_ptr<ObjFunction> bind(Instance *inst);
+    std::shared_ptr<ObjFunction> bind(ObjInstance *inst);
 
     ObjFunction(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, const bool is_init)
         : Callable(ObjType::Function), declaration(std::move(declaration)), closure(std::move(closure)), is_init(is_init) {}
 
     int arity() override;
-    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
+    Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 
@@ -72,14 +72,14 @@ public:
     bool is_init;
 };
 
-using NativeFn = Value(*)(std::vector<std::shared_ptr<Obj>>);
+using NativeFn = Value(*)(const std::vector<Value> &);
 
 class ObjNative : public Callable {
 public:
     ObjNative(int arity, NativeFn function);
 
     int arity() override;
-    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
+    Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 
@@ -93,7 +93,7 @@ public:
 
     std::shared_ptr<ObjFunction> find_method(const std::string &method_name) const;
     int arity() override;
-    Value call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) override;
+    Value call(Vm *vm, const std::vector<Value> &args) override;
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
 

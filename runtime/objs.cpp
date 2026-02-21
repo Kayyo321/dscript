@@ -3,6 +3,7 @@
 #include <ostream>
 
 #include "throwables.h"
+#include "vm.h"
 
 ObjString::ObjString(std::string chars)
     : Obj(ObjType::String), chars(std::move(chars)) {}
@@ -18,20 +19,40 @@ void ObjString::print(std::ostream &os) {
     os << chars;
 }
 
-std::shared_ptr<ObjFunction> ObjFunction::bind(Instance *inst) {
-    (void) inst;
+std::shared_ptr<ObjFunction> ObjFunction::bind(ObjInstance *inst) {
     const auto env = std::make_shared<Environment>(closure);
-    env->define("self", Value::none());
+    env->define("self", Value::object(std::shared_ptr<ObjInstance>(inst, [](ObjInstance *) {})));
     return std::make_shared<ObjFunction>(declaration, env, is_init);
 }
 
 int ObjFunction::arity() {
-    return static_cast<int>(declaration->params.size());
+    const int param_count = static_cast<int>(declaration->params.size());
+    const int block_count = declaration->blocks.has_value() ? static_cast<int>(declaration->blocks->size()) : 0;
+    return param_count + block_count;
 }
 
-Value ObjFunction::call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) {
-    (void) vm;
-    (void) args;
+Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
+    const auto env = std::make_shared<Environment>(closure);
+
+    std::size_t arg_idx = 0;
+    for (const auto &param : declaration->params) {
+        env->define(param.literal.lexeme, args[arg_idx++]);
+    }
+
+    if (declaration->blocks.has_value()) {
+        for (const auto &block : declaration->blocks.value()) {
+            env->define(block.name.literal.lexeme, args[arg_idx++]);
+        }
+    }
+
+    try {
+        vm->execute_block(declaration->body, env);
+    } catch (const Return &r) {
+        if (is_init) {
+            return closure->get_at(0, "self");
+        }
+        return r.value;
+    }
 
     if (is_init) {
         return closure->get_at(0, "self");
@@ -60,7 +81,7 @@ int ObjNative::arity() {
     return arity_value;
 }
 
-Value ObjNative::call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) {
+Value ObjNative::call(Vm *vm, const std::vector<Value> &args) {
     (void) vm;
     return function(args);
 }
@@ -95,11 +116,12 @@ int ObjClass::arity() {
     return init->arity();
 }
 
-Value ObjClass::call(Vm *vm, const std::vector<std::shared_ptr<Obj>> &args) {
-    (void) vm;
-    (void) args;
-
+Value ObjClass::call(Vm *vm, const std::vector<Value> &args) {
     const auto instance = std::make_shared<ObjInstance>(std::make_shared<ObjClass>(*this));
+    const auto init = find_method("init");
+    if (init != nullptr) {
+        init->bind(instance.get())->call(vm, args);
+    }
     return Value::object(instance);
 }
 
@@ -135,7 +157,7 @@ Value ObjInstance::get(const std::string &field_name) {
 
     const auto method = klass->find_method(field_name);
     if (method != nullptr) {
-        return Value::object(method);
+        return Value::object(method->bind(this));
     }
 
     throw RuntimeError("Undefined property '" + field_name + "'.");

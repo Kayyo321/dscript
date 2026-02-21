@@ -10,6 +10,8 @@ dscript: \
   CMakeFiles/dscript.dir/runtime/value.cpp.o \
   CMakeFiles/dscript.dir/parsing/parser.cpp.o \
   CMakeFiles/dscript.dir/runtime/env.cpp.o \
+  CMakeFiles/dscript.dir/runtime/vm.cpp.o \
+  CMakeFiles/dscript.dir/resolving/resolver.cpp.o \
   /usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/../../../../lib/libstdc++.so \
   /usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/../../../../lib/libm.so \
@@ -58,6 +60,10 @@ CMakeFiles/dscript.dir/runtime/value.cpp.o:
 CMakeFiles/dscript.dir/parsing/parser.cpp.o:
 
 CMakeFiles/dscript.dir/runtime/env.cpp.o:
+
+CMakeFiles/dscript.dir/runtime/vm.cpp.o:
+
+CMakeFiles/dscript.dir/resolving/resolver.cpp.o:
 
 /usr/lib/gcc/aarch64-unknown-linux-gnu/15.2.1/../../../../lib/libstdc++.so:
 

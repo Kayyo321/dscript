@@ -23,4 +23,7 @@ add_executable(dscript main.cpp
         runtime/env.h
         runtime/instance.h
         runtime/env.cpp
-        runtime/klass.h)
+        runtime/vm.cpp
+        runtime/klass.h
+        resolving/resolver.h
+        resolving/resolver.cpp)

@@ -1,19 +1,13 @@
-from 'std' import 'math';
-"You could also do: from '.' import 'other-file'"
-
 fn main() {
     log('Hello, World!');
 
-    funny(let i = 10) {
-        log('This is the block-literal!');
-        log(i);
-    }
+    let i = 10;
+    funny(i);
 }
 
-"This is a comment"
-fn funny(%expr_literal) ($block_literal) {
-    %expr_literal();
-    $block_literal();
+fn funny(i) {
+    log('This is the block-literal!');
+    log(i);
 }
 
 def dummy; "simple custom keyword, no logic attached"

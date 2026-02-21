@@ -232,6 +232,30 @@ parsing/parser.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/parsing/parser.cpp.s
 .PHONY : parsing/parser.cpp.s
 
+resolving/resolver.o: resolving/resolver.cpp.o
+.PHONY : resolving/resolver.o
+
+# target to build an object file
+resolving/resolver.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/resolving/resolver.cpp.o
+.PHONY : resolving/resolver.cpp.o
+
+resolving/resolver.i: resolving/resolver.cpp.i
+.PHONY : resolving/resolver.i
+
+# target to preprocess a source file
+resolving/resolver.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/resolving/resolver.cpp.i
+.PHONY : resolving/resolver.cpp.i
+
+resolving/resolver.s: resolving/resolver.cpp.s
+.PHONY : resolving/resolver.s
+
+# target to generate assembly for a file
+resolving/resolver.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/resolving/resolver.cpp.s
+.PHONY : resolving/resolver.cpp.s
+
 runtime/env.o: runtime/env.cpp.o
 .PHONY : runtime/env.o
 
@@ -328,6 +352,30 @@ runtime/value.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/runtime/value.cpp.s
 .PHONY : runtime/value.cpp.s
 
+runtime/vm.o: runtime/vm.cpp.o
+.PHONY : runtime/vm.o
+
+# target to build an object file
+runtime/vm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/runtime/vm.cpp.o
+.PHONY : runtime/vm.cpp.o
+
+runtime/vm.i: runtime/vm.cpp.i
+.PHONY : runtime/vm.i
+
+# target to preprocess a source file
+runtime/vm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/runtime/vm.cpp.i
+.PHONY : runtime/vm.cpp.i
+
+runtime/vm.s: runtime/vm.cpp.s
+.PHONY : runtime/vm.s
+
+# target to generate assembly for a file
+runtime/vm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dscript.dir/build.make CMakeFiles/dscript.dir/runtime/vm.cpp.s
+.PHONY : runtime/vm.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -350,6 +398,9 @@ help:
 	@echo "... parsing/parser.o"
 	@echo "... parsing/parser.i"
 	@echo "... parsing/parser.s"
+	@echo "... resolving/resolver.o"
+	@echo "... resolving/resolver.i"
+	@echo "... resolving/resolver.s"
 	@echo "... runtime/env.o"
 	@echo "... runtime/env.i"
 	@echo "... runtime/env.s"
@@ -362,6 +413,9 @@ help:
 	@echo "... runtime/value.o"
 	@echo "... runtime/value.i"
 	@echo "... runtime/value.s"
+	@echo "... runtime/vm.o"
+	@echo "... runtime/vm.i"
+	@echo "... runtime/vm.s"
 .PHONY : help
 
 

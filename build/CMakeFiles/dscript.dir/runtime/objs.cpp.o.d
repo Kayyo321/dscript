@@ -212,4 +212,12 @@ CMakeFiles/dscript.dir/runtime/objs.cpp.o: \
  /usr/include/c++/15.2.1/ostream /usr/include/c++/15.2.1/bits/ostream.tcc \
  /usr/include/c++/15.2.1/bits/istream.tcc \
  /usr/include/c++/15.2.1/bits/sstream.tcc \
- /home/sullivanb/CLionProjects/dscript/runtime/throwables.h
+ /home/sullivanb/CLionProjects/dscript/runtime/throwables.h \
+ /home/sullivanb/CLionProjects/dscript/runtime/vm.h \
+ /usr/include/c++/15.2.1/unordered_map \
+ /usr/include/c++/15.2.1/bits/unordered_map.h \
+ /usr/include/c++/15.2.1/bits/hashtable.h \
+ /usr/include/c++/15.2.1/bits/hashtable_policy.h \
+ /home/sullivanb/CLionProjects/dscript/runtime/../parsing/a_visitor.h \
+ /home/sullivanb/CLionProjects/dscript/runtime/../parsing/expr.h \
+ /home/sullivanb/CLionProjects/dscript/runtime/../parsing/stmt.h

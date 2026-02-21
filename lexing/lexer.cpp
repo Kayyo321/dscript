@@ -82,7 +82,7 @@ Token Lexer::identifier(const char start) {
     }
 
     Token id_or_keyword = token_factory.compile(TokenType::Identifier);
-    if (keywords.contains(id_or_keyword.literal.lexeme)) {
+    if (keywords.find(id_or_keyword.literal.lexeme) != keywords.end()) {
         id_or_keyword.type = keywords.at(id_or_keyword.literal.lexeme);
     }
 
@@ -190,7 +190,11 @@ char FileLexer::peek(const int offset) {
     const int c = file.peek();
     file.seekg(current);
 
-    return (c == '\0') ? '\0' : static_cast<char>(c);
+    if (c == EOF || c == '\0') {
+        return '\0';
+    }
+
+    return static_cast<char>(c);
 }
 
 char FileLexer::next(const bool feed) {

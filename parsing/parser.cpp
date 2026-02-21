@@ -530,6 +530,10 @@ private:
             return std::make_shared<VariableExpr>(previous());
         }
 
+        if (match(TokenType::BlockIdentifier)) {
+            return std::make_shared<VariableExpr>(previous());
+        }
+
         if (match(TokenType::LeftParen)) {
             ExprPtr expr = parse_expression();
             consume_or_throw(TokenType::RightParen, "Expected ')' after expression.");
