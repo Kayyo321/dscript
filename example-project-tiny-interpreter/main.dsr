@@ -12,13 +12,13 @@ fn main() {
         }
 
         let tokens, lex_err = tokenize(line);
-        if not (lex_err is none) then {
+        if lex_err is not none then {
             log(lex_err);
             continue;
         }
 
         let ast, parse_err = parse(tokens);
-        if not (parse_err is none) then {
+        if parse_err is not none then {
             log(parse_err);
             continue;
         }
