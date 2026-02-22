@@ -1,6 +1,6 @@
 # dscript
 
-A small, expressive scripting language in C++ focused on **readable DSL-style code**.
+A small, expressive scripting language in C++ focused on personalization.
 
 ## Why dscript is cool
 
@@ -88,6 +88,3 @@ x i = 10 {
 - `parsing/` AST + parser
 - `resolving/` name/scope resolution
 - `runtime/` VM, values, objects, stdlibs
-
----
-If you want, I can also generate a **one-page language cheat sheet** (`SYNTAX.md`) for onboarding.
