@@ -1,2 +1,4 @@
 This is a example interpreter written in d-script!
 It only is able to evaluate math equations, but aint that cool?
+If you want to run it:
+dscript main.dsr
