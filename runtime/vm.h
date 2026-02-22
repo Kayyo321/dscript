@@ -38,6 +38,9 @@ public:
 	Value visit_let_stmt(LetStmt *stmt) override;
 	Value visit_while_stmt(WhileStmt *stmt) override;
 	Value visit_for_stmt(ForStmt *stmt) override;
+	Value visit_do_while_stmt(DoWhileStmt *stmt) override;
+	Value visit_break_stmt(BreakStmt *stmt) override;
+	Value visit_continue_stmt(ContinueStmt *stmt) override;
 	Value visit_def_stmt(DefStmt *stmt) override;
 	Value visit_import_stmt(ImportStmt *stmt) override;
 	Value visit_from_import_stmt(FromImportStmt *stmt) override;

@@ -1,0 +1,28 @@
+import io as io;
+
+from './lexer.dsr' import tokenize;
+from './parser.dsr' import parse;
+from './interpreter.dsr' import interpret;
+
+fn main() {
+    do {
+        let line = io.input('> ');
+        if line is none or line is '' or line is 'exit' then {
+            break;
+        }
+
+        let tokens, lex_err = tokenize(line);
+        if not (lex_err is none) then {
+            log(lex_err);
+            continue;
+        }
+
+        let ast, parse_err = parse(tokens);
+        if not (parse_err is none) then {
+            log(parse_err);
+            continue;
+        }
+
+        interpret(ast);
+    }
+}

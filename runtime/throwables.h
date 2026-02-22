@@ -95,4 +95,16 @@ public:
     Value value;
 };
 
+class BreakSignal : public std::runtime_error {
+public:
+    BreakSignal()
+        : std::runtime_error("break") {}
+};
+
+class ContinueSignal : public std::runtime_error {
+public:
+    ContinueSignal()
+        : std::runtime_error("continue") {}
+};
+
 #endif //THROABLES_H

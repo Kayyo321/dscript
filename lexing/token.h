@@ -34,6 +34,7 @@ enum class TokenType {
     PowerEquals,
 
     And,
+    Or,
     Is,
     Not,
     CouldBe,
@@ -52,6 +53,8 @@ enum class TokenType {
     Then,
     Else,
     Finally,
+    Break,
+    Continue,
     Log,
     Return,
 

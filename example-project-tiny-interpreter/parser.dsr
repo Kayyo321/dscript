@@ -1,0 +1,230 @@
+from './lexer.dsr' import NumberToken;
+from './lexer.dsr' import OperatorToken;
+from './lexer.dsr' import EndOfInputToken;
+
+class Expr {
+}
+
+class NumberExpr {
+    fn init(digit) {
+        self.kind = 'number';
+        self.digit = digit;
+    }
+}
+
+class GroupingExpr {
+    fn init(expr) {
+        self.kind = 'grouping';
+        self.expr = expr;
+    }
+}
+
+class UnaryExpr {
+    fn init(op, expr) {
+        self.kind = 'unary';
+        self.op = op;
+        self.expr = expr;
+    }
+}
+
+class BinaryExpr {
+    fn init(lhs, op, rhs) {
+        self.kind = 'binary';
+        self.lhs = lhs;
+        self.op = op;
+        self.rhs = rhs;
+    }
+}
+
+class Parser {
+    fn init(tokens) {
+        self.tokens = tokens;
+        self.idx = 0;
+        self.had_error = false;
+    }
+
+    fn get_ast() {
+        let ast = self.parse();
+        if self.had_error then {
+            return ast, error("encountered error while parsing");
+        }
+
+        return ast, none;
+    }
+
+    fn parse() {
+        if self.at_end() then {
+            self.had_error = true;
+            return none;
+        }
+
+        let expr = self.expression();
+        if expr is none then
+            return none;
+
+        if not self.at_end() and not (self.peek() couldbe EndOfInputToken) then {
+            self.had_error = true;
+            return none;
+        }
+
+        return expr;
+    }
+
+    fn expression() {
+        let expr = self.term();
+        if expr is none then
+            return none;
+
+        do {
+            let op = self.match_operator(['+', '-']);
+            if op is none then {
+                break;
+            }
+
+            let rhs = self.term();
+            if rhs is none then {
+                self.had_error = true;
+                return none;
+            }
+
+            expr = BinaryExpr(expr, op.lexeme, rhs);
+        }
+
+        return expr;
+    }
+
+    fn term() {
+        let expr = self.power();
+        if expr is none then
+            return none;
+
+        do {
+            let op = self.match_operator(['*', '/', '%']);
+            if op is none then {
+                break;
+            }
+
+            let rhs = self.power();
+            if rhs is none then {
+                self.had_error = true;
+                return none;
+            }
+
+            expr = BinaryExpr(expr, op.lexeme, rhs);
+        }
+
+        return expr;
+    }
+
+    fn power() {
+        let expr = self.unary();
+        if expr is none then
+            return none;
+
+        let op = self.match_operator(['^']);
+        if op is none then {
+            return expr;
+        }
+
+        let rhs = self.power();
+        if rhs is none then {
+            self.had_error = true;
+            return none;
+        }
+
+        return BinaryExpr(expr, op.lexeme, rhs);
+    }
+
+    fn unary() {
+        let op = self.match_operator(['+', '-']);
+        if op is not none then {
+            let rhs = self.unary();
+            if rhs is none then {
+                self.had_error = true;
+                return none;
+            }
+
+            return UnaryExpr(op.lexeme, rhs);
+        }
+
+        return self.primary();
+    }
+
+    fn primary() {
+        let token = self.peek();
+        if token is none then {
+            self.had_error = true;
+            return none;
+        }
+
+        if self.is_number_token(token) then {
+            return NumberExpr(self.next().real);
+        }
+
+        if self.is_operator_token(token) and token.lexeme is '(' then {
+            self.next();
+
+            let expr = self.expression();
+            if expr is none then
+                return none;
+
+            if self.match_operator([')']) is none then {
+                self.had_error = true;
+                return none;
+            }
+
+            return GroupingExpr(expr);
+        }
+
+        self.had_error = true;
+        return none;
+    }
+
+    fn match_operator(ops) {
+        let token = self.peek();
+        if token is none then
+            return none;
+
+        if not self.is_operator_token(token) then
+            return none;
+
+        for (let i = 0; i < length(ops); ++i) do {
+            if token.lexeme is ops[i] then {
+                return self.next();
+            }
+        }
+
+        return none;
+    }
+
+    fn is_number_token(token) {
+        return token couldbe NumberToken;
+    }
+
+    fn is_operator_token(token) {
+        return token couldbe OperatorToken;
+    }
+
+    fn peek() {
+        if self.at_end() then 
+            return none;
+
+        return self.tokens[self.idx];
+    }
+
+    fn next() {
+        if self.at_end() then 
+            return none;
+
+        return self.tokens[self.idx++];
+    }
+
+    fn at_end() {
+        return self.idx >= length(self.tokens)
+    }
+}
+
+export fn parse(tokens) {
+    let parser = Parser(tokens);
+    return parser.get_ast();
+}

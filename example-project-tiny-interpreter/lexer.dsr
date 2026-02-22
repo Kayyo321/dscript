@@ -1,0 +1,176 @@
+import core as core;
+
+export class Token {
+    fn init(lexeme) {
+        self.lexeme = lexeme;
+    }
+}
+
+export class NumberToken is Token {
+    fn init(lexeme, real) {
+        super(lexeme);
+        self.lexeme = lexeme;
+        self.real = real;
+    }
+}
+
+export class OperatorToken is Token {
+    fn init(lexeme) {
+        super(lexeme);
+        self.lexeme = lexeme;
+    }
+}
+
+export class EndOfInputToken is Token {
+    fn init() {
+        super('\0');
+        self.lexeme = '\0';
+    }
+}
+
+export class UnknownToken is Token {
+    fn init(lexeme) {
+        super(lexeme);
+        self.lexeme = lexeme;
+    }
+}
+
+class Lexer {
+    fn init(line) {
+        self.line = line;
+        self.buff = "";
+        self.idx = 0;
+        self.current_character = '\0';
+        self.had_error = false;
+    }
+
+    fn next_token() {
+        self.skip_whitespace()
+
+        if self.at_end() {
+            return EndOfInputToken();
+        }
+
+        let ch = self.peek();
+
+        if self.is_digit(ch) {
+            return self.digit_tok();
+        } else {
+            return self.operator();
+        }
+    }
+
+    fn digit_tok() {
+        while self.is_digit(self.peek()) or self.peek() is '.' do {
+            self.feed();
+        }
+
+        let lexeme = self.compile_buf();
+        let literal = core.to_number(lexeme);
+
+        return NumberToken(lexeme, literal);
+    }
+
+    fn operator() {
+        let ops = ['+', '-', '*', '/', '%', '^', '(', ')'];
+        for (let i = 0; i < length(ops); ++i) do {
+            if self.peek() is ops[i] then {
+                self.feed();
+                let op = self.compile_buf();
+
+                return OperatorToken(op);
+            }
+        }
+
+        self.feed();
+        let unknown = self.compile_buf();
+
+        self.had_error = true;
+
+        return UnknownToken(unknown);
+    }
+
+    fn is_digit(ch) {
+        let digits = ['1','2','3','4','5','6','7','8','9','0'];
+        for (let i = 0; i < 10; ++i) do {
+            if ch is digits[i] {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    fn skip_whitespace() {
+        while self.peek() is ' ' and not self.at_end() do {
+            self.eat()
+        }
+    }
+
+    fn feed() {
+        self.eat(do_with_character: {
+            self.buff = append(self.buff, self.current_character);
+        });
+    }
+
+    fn eat() (do_with_character: $b) {
+        if self.at_end() then
+            return '\0';
+
+        let character = self.line[self.idx++];
+        self.current_character = character;
+
+        if do_with_character is not none then {
+            $b();
+        }
+
+        return character;
+    }
+
+    fn peek() {
+        if self.at_end() then 
+            return '\0';
+
+        return self.line[self.idx];
+    }
+
+    fn at_end() {
+        return self.idx >= length(self.line);
+    }
+
+    fn compile_buf() {
+        let tmp = self.buff;
+        self.buff = "";
+        return tmp;
+    }
+}
+
+fn whats_wrong(tokens) {
+    let sb = "unknown character(s): ";
+
+    for (let i = 0; i < length(tokens); ++i) do {
+        if not(tokens[i] couldbe UnknownToken) then 
+            continue;
+
+        sb = append(sb, "'" + tokens[i].lexeme + "'");
+    }
+
+    return error(sb);
+}
+
+export fn tokenize(line) {
+    let lexer = Lexer(line);
+
+    let tokens = [];
+    for (let token = lexer.next_token(); not(token couldbe EndOfInputToken); token = lexer.next_token()) do {
+        append(tokens, token);
+    }
+
+    append(tokens, lexer.next_token()); "add the eof token";
+
+    if lexer.had_error then {
+        return tokens, whats_wrong(tokens);
+    }
+
+    return tokens, none;
+}

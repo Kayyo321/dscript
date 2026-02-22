@@ -23,5 +23,7 @@
   "examples/22_error_object_and_stderr.dsr",
   "examples/23_imports_and_modules.dsr",
   "examples/24_stdlib_io.dsr",
-  "examples/25_string_escapes.dsr"
+  "examples/25_string_escapes.dsr",
+  "examples/26_infinite_do_break_continue.dsr",
+  "examples/27_length_and_append.dsr"
 ]

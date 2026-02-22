@@ -187,6 +187,44 @@ public:
     StmtPtr finally_clause;
 };
 
+class DoWhileStmt : public Stmt {
+public:
+    DoWhileStmt(StmtPtr body, ExprPtr condition, StmtPtr finally_clause)
+        : body(std::move(body)), condition(std::move(condition)), finally_clause(std::move(finally_clause)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_do_while_stmt(this);
+    }
+
+    StmtPtr body;
+    ExprPtr condition;
+    StmtPtr finally_clause;
+};
+
+class BreakStmt : public Stmt {
+public:
+    explicit BreakStmt(Token keyword)
+        : keyword(std::move(keyword)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_break_stmt(this);
+    }
+
+    Token keyword;
+};
+
+class ContinueStmt : public Stmt {
+public:
+    explicit ContinueStmt(Token keyword)
+        : keyword(std::move(keyword)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_continue_stmt(this);
+    }
+
+    Token keyword;
+};
+
 class DefStmt : public Stmt {
 public:
     DefStmt(Token name, std::vector<Token> params, std::vector<StmtPtr> body, bool isStatic)

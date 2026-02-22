@@ -40,7 +40,15 @@ bool Value::operator==(const Value &other) const {
 
         default:
         case ValueType::Object:
-            return as.object == other.as.object;
+            if (as.object == other.as.object) {
+                return true;
+            }
+
+            if (as.object == nullptr || other.as.object == nullptr) {
+                return false;
+            }
+
+            return (*as.object) == (*other.as.object);
     }
 }
 

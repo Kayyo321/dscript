@@ -24,6 +24,7 @@ add_executable(dscript main.cpp
         runtime/instance.h
         runtime/env.cpp
         runtime/vm.cpp
+        runtime/stdlibs/core.cpp
         runtime/stdlibs/io.cpp
         runtime/stdlibs/registry.cpp
         runtime/klass.h

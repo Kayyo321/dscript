@@ -1,0 +1,32 @@
+fn main() {
+    log('== do infinite + break/continue ==');
+
+    let i = 0;
+    do {
+        i++;
+        if i is 2 then {
+            continue;
+        }
+
+        log('i tick:');
+        log(i);
+
+        if i >= 4 then {
+            break;
+        }
+    }
+
+    log('done i:');
+    log(i);
+
+    let j = 0;
+    while j < 3 do {
+        j++;
+        if j is 1 then continue;
+        if j is 3 then break;
+        log('while j:');
+        log(j);
+    } finally {
+        log('while finally ran');
+    }
+}

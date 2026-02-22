@@ -37,6 +37,7 @@ private:
 
     const std::map<std::string, TokenType> keywords = {
         {"and", TokenType::And},
+        {"or", TokenType::Or},
         {"is", TokenType::Is},
         {"not", TokenType::Not},
         {"couldbe", TokenType::CouldBe},
@@ -55,6 +56,8 @@ private:
         {"then", TokenType::Then},
         {"else", TokenType::Else},
         {"finally", TokenType::Finally},
+        {"break", TokenType::Break},
+        {"continue", TokenType::Continue},
         {"log", TokenType::Log},
         {"return", TokenType::Return},
     };

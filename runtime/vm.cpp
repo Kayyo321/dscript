@@ -161,23 +161,15 @@ static std::size_t compute_highlight_length(const std::string &line, const std::
 	return length;
 }
 
-static Value native_error(const std::vector<Value> &args) {
-	if (args.size() != 1) {
-		throw ArityError("error() expects exactly one argument.");
-	}
-
-	const Value &message = args[0];
-	if (message.type != ValueType::Object || message.as.object->get_type() != ObjType::String) {
-		throw TypeError("error() argument must be a string.");
-	}
-
-	const auto message_obj = std::static_pointer_cast<ObjString>(message.as.object);
-	return Value::object(std::make_shared<ObjError>(message_obj->chars));
-}
-
 Vm::Vm()
 	: globals(std::make_shared<Environment>()), environment(globals) {
-	globals->define("error", Value::object(std::make_shared<ObjNative>(1, native_error)));
+	const auto &registry = get_stdlib_registry();
+	if (const auto core_it = registry.find("core"); core_it != registry.end()) {
+		std::unordered_map<std::string, Value> core_exports = core_it->second();
+		for (const auto &[name, value] : core_exports) {
+			globals->define(name, value);
+		}
+	}
 }
 
 void Vm::interpret(const std::vector<StmtPtr> &statements) {
@@ -303,7 +295,9 @@ std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const Fi
 			throw CallError(error.str(), location);
 		}
 
-		locals = resolver.get_locals();
+		for (const auto &[expr, depth] : resolver.get_locals()) {
+			locals.insert_or_assign(expr, depth);
+		}
 		source_path = resolved_path;
 		source_lines = read_module_lines(resolved_path);
 
@@ -321,7 +315,6 @@ std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const Fi
 		module_cache.insert_or_assign(resolved_path, module);
 
 		environment = previous_environment;
-		locals = previous_locals;
 		source_path = previous_source_path;
 		source_lines = previous_source_lines;
 		active_module_exports = previous_exports;
@@ -550,7 +543,13 @@ Value Vm::visit_while_stmt(WhileStmt *stmt) {
 	bool ran = false;
 	while (is_truthy(evaluate(stmt->condition))) {
 		ran = true;
-		execute(stmt->body);
+		try {
+			execute(stmt->body);
+		} catch (const ContinueSignal &) {
+			continue;
+		} catch (const BreakSignal &) {
+			break;
+		}
 	}
 
 	if (ran && stmt->finally_clause != nullptr) {
@@ -561,24 +560,77 @@ Value Vm::visit_while_stmt(WhileStmt *stmt) {
 }
 
 Value Vm::visit_for_stmt(ForStmt *stmt) {
-	if (stmt->init != nullptr) {
-		execute(stmt->init);
+	const auto previous = environment;
+	environment = std::make_shared<Environment>(environment);
+
+	try {
+		if (stmt->init != nullptr) {
+			execute(stmt->init);
+		}
+
+		bool ran = false;
+		while (stmt->condition == nullptr || is_truthy(evaluate(stmt->condition))) {
+			ran = true;
+			bool should_break = false;
+			try {
+				execute(stmt->body);
+			} catch (const ContinueSignal &) {
+				if (stmt->inc != nullptr) {
+					(void) evaluate(stmt->inc);
+				}
+				continue;
+			} catch (const BreakSignal &) {
+				should_break = true;
+			}
+
+			if (should_break) {
+				break;
+			}
+
+			if (stmt->inc != nullptr) {
+				(void) evaluate(stmt->inc);
+			}
+		}
+
+		if (ran && stmt->finally_clause != nullptr) {
+			execute(stmt->finally_clause);
+		}
+	} catch (...) {
+		environment = previous;
+		throw;
 	}
 
+	environment = previous;
+	return Value::none();
+}
+
+Value Vm::visit_do_while_stmt(DoWhileStmt *stmt) {
 	bool ran = false;
-	while (stmt->condition == nullptr || is_truthy(evaluate(stmt->condition))) {
+	do {
 		ran = true;
-		execute(stmt->body);
-		if (stmt->inc != nullptr) {
-			(void) evaluate(stmt->inc);
+		try {
+			execute(stmt->body);
+		} catch (const ContinueSignal &) {
+		} catch (const BreakSignal &) {
+			break;
 		}
-	}
+	} while (is_truthy(evaluate(stmt->condition)));
 
 	if (ran && stmt->finally_clause != nullptr) {
 		execute(stmt->finally_clause);
 	}
 
 	return Value::none();
+}
+
+Value Vm::visit_break_stmt(BreakStmt *stmt) {
+	(void) stmt;
+	throw BreakSignal();
+}
+
+Value Vm::visit_continue_stmt(ContinueStmt *stmt) {
+	(void) stmt;
+	throw ContinueSignal();
 }
 
 Value Vm::visit_def_stmt(DefStmt *stmt) {
@@ -894,10 +946,12 @@ Value Vm::visit_logical_expr(LogicalExpr *expr) {
 		if (!is_truthy(left)) {
 			return left;
 		}
-	} else {
+	} else if (expr->op.type == TokenType::Or) {
 		if (is_truthy(left)) {
 			return left;
 		}
+	} else {
+		throw RuntimeError(RuntimeErrorKind::Runtime, "Invalid logical operator token.", expr->op.file_pos);
 	}
 
 	return evaluate(expr->right);

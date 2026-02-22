@@ -1,0 +1,137 @@
+def checked_div(lhs, rhs) {
+    if rhs is 0 then {
+        return none, error('division by zero');
+    }
+
+    return lhs / rhs, none;
+}
+
+def checked_mod(lhs, rhs) {
+    if rhs is 0 then {
+        return none, error('modulo by zero');
+    }
+
+    return lhs % rhs, none;
+}
+
+class Interpreter {
+    fn eval(ast) {
+        if ast is none then {
+            return none, error('cannot evaluate empty ast');
+        }
+
+        return self.eval_expr(ast);
+    }
+
+    fn eval_expr(expr) {
+        if expr.kind is 'number' then {
+            return expr.digit, none;
+        }
+
+        if expr.kind is 'binary' then {
+            let lhs, lhs_err = self.eval_expr(expr.lhs);
+            if lhs_err is not none then {
+                return none, lhs_err;
+            }
+
+            let rhs, rhs_err = self.eval_expr(expr.rhs);
+            if rhs_err is not none then {
+                return none, rhs_err;
+            }
+
+            return self.apply_binary(expr.op, lhs, rhs);
+        }
+
+        if expr.kind is 'unary' then {
+            let rhs, rhs_err = self.eval_expr(expr.expr);
+            if rhs_err is not none then {
+                return none, rhs_err;
+            }
+
+            return self.apply_unary(expr.op, rhs);
+        }
+
+        if expr.kind is 'grouping' then {
+            return self.eval_expr(expr.expr);
+        }
+
+        return none, error('unknown expression node');
+    }
+
+    fn apply_unary(op, rhs) {
+        if op is '+' then {
+            return rhs, none;
+        }
+
+        if op is '-' then {
+            return -rhs, none;
+        }
+
+        return none, error('unsupported unary operator: ' + op);
+    }
+
+    fn apply_binary(op, lhs, rhs) {
+        if op is '+' then {
+            return lhs + rhs, none;
+        }
+
+        if op is '-' then {
+            return lhs - rhs, none;
+        }
+
+        if op is '*' then {
+            return lhs * rhs, none;
+        }
+
+        if op is '/' then {
+            return checked_div(lhs, rhs);
+        }
+
+        if op is '%' then {
+            return checked_mod(lhs, rhs);
+        }
+
+        if op is '^' then {
+            if rhs % 1 is not 0 then {
+                return none, error('exponent must be an integer');
+            }
+
+            let exponent = rhs;
+            let invert = false;
+            if exponent < 0 then {
+                invert = true;
+                exponent = -exponent;
+            }
+
+            let result = 1;
+            for (let i = 0; i < exponent; ++i) do {
+                result = result * lhs;
+            }
+
+            if invert then {
+                if result is 0 then {
+                    return none, error('zero cannot be raised to a negative power');
+                }
+
+                return 1 / result, none;
+            }
+
+            return result, none;
+        }
+
+        return none, error('unsupported binary operator: ' + op);
+    }
+}
+
+export fn interpret(ast) {
+    let interpreter = Interpreter();
+    let value, err = interpreter.eval(ast);
+
+    if err is not none then {
+        log(err);
+        return none;
+    }
+
+    log(value);
+    return value;
+}

@@ -148,6 +148,8 @@ private:
                 case TokenType::For:
                 case TokenType::While:
                 case TokenType::Finally:
+                case TokenType::Break:
+                case TokenType::Continue:
                 case TokenType::Log:
                 case TokenType::Let:
                 case TokenType::Return:
@@ -359,7 +361,7 @@ private:
     }
 
     StmtPtr parse_if_stmt() {
-        ExprPtr condition = parse_expression();
+        ExprPtr condition = parse_condition_expression();
         if (match(TokenType::Then) || match(TokenType::Do)) {
         }
 
@@ -380,24 +382,34 @@ private:
         return parse_stmt();
     }
 
+    StmtPtr parse_break_stmt() {
+        const Token keyword = previous();
+        match(TokenType::Semicolon);
+        return std::make_shared<BreakStmt>(keyword);
+    }
+
+    StmtPtr parse_continue_stmt() {
+        const Token keyword = previous();
+        match(TokenType::Semicolon);
+        return std::make_shared<ContinueStmt>(keyword);
+    }
+
     StmtPtr parse_do_stmt() {
         StmtPtr body = parse_stmt();
-        consume_or_throw(TokenType::While, "Expected 'while' after do-while body.");
-        ExprPtr condition = parse_expression();
-        match(TokenType::Semicolon);
-        StmtPtr finally_clause = parse_loop_finally_clause_if_present();
 
-        std::vector<StmtPtr> statements;
-        statements.push_back(body);
-        statements.push_back(std::make_shared<WhileStmt>(condition, body, nullptr));
-        if (finally_clause != nullptr) {
-            statements.push_back(finally_clause);
+        if (match(TokenType::While)) {
+            ExprPtr condition = parse_condition_expression();
+            match(TokenType::Semicolon);
+            StmtPtr finally_clause = parse_loop_finally_clause_if_present();
+            return std::make_shared<DoWhileStmt>(body, condition, finally_clause);
         }
-        return std::make_shared<BlockStmt>(statements);
+
+        StmtPtr finally_clause = parse_loop_finally_clause_if_present();
+        return std::make_shared<WhileStmt>(std::make_shared<LiteralExpr>(Value::boolean(true)), body, finally_clause);
     }
 
     StmtPtr parse_while_stmt() {
-        ExprPtr condition = parse_expression();
+        ExprPtr condition = parse_condition_expression();
         if (match(TokenType::Do)) {
         }
         StmtPtr body = parse_stmt();
@@ -420,7 +432,7 @@ private:
 
             ExprPtr condition = nullptr;
             if (!check(TokenType::Semicolon)) {
-                condition = parse_expression();
+                condition = parse_condition_expression();
             }
             consume_or_throw(TokenType::Semicolon, "Expected ';' after loop condition.");
 
@@ -437,7 +449,7 @@ private:
             return std::make_shared<ForStmt>(initializer, condition, increment, body, finally_clause);
         }
 
-        ExprPtr condition = parse_expression();
+        ExprPtr condition = parse_condition_expression();
         if (match(TokenType::Do)) {
         }
         StmtPtr body = parse_stmt();
@@ -501,6 +513,18 @@ private:
 
     ExprPtr parse_expression() {
         return parse_assignment();
+    }
+
+    ExprPtr parse_condition_expression() {
+        const bool previous_allow_implicit = allow_implicit_call;
+        const bool previous_allow_trailing_block = allow_trailing_call_block;
+
+        allow_implicit_call = false;
+        allow_trailing_call_block = false;
+        ExprPtr expr = parse_expression();
+        allow_implicit_call = previous_allow_implicit;
+        allow_trailing_call_block = previous_allow_trailing_block;
+        return expr;
     }
 
     ExprPtr parse_left_assoc(ExprPtr (Parser::*next)(), const std::initializer_list<TokenType> operators) {
@@ -583,8 +607,8 @@ private:
 
     ExprPtr parse_or() {
         ExprPtr expr = parse_and();
-        while (check(TokenType::Identifier) && peek().literal.lexeme == "or") {
-            Token op = advance();
+        while (match(TokenType::Or)) {
+            Token op = previous();
             ExprPtr right = parse_and();
             expr = std::make_shared<LogicalExpr>(expr, op, right);
         }
@@ -608,7 +632,7 @@ private:
             if (match(TokenType::Is)) {
                 Token op = previous();
                 if (match(TokenType::Not)) {
-                    op = previous();
+                    op.type = TokenType::Not;
                 }
 
                 ExprPtr right = parse_comparison();
@@ -714,7 +738,7 @@ private:
                 Token paren = consume_or_throw(TokenType::RightParen, "Expected ')' after arguments.");
                 auto call_expr = std::make_shared<CallExpr>(expr, paren, args);
 
-                if (match(TokenType::LeftBrace)) {
+                if (allow_trailing_call_block && match(TokenType::LeftBrace)) {
                     call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
                     expr = call_expr;
                     break;
@@ -752,7 +776,7 @@ private:
                 }
 
                 auto call_expr = std::make_shared<CallExpr>(expr, previous(), args);
-                if (match(TokenType::LeftBrace)) {
+                if (allow_trailing_call_block && match(TokenType::LeftBrace)) {
                     call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
                     expr = call_expr;
                     break;
@@ -841,6 +865,7 @@ private:
     std::vector<Token> tokens{};
     std::size_t current{0};
     bool allow_implicit_call{true};
+    bool allow_trailing_call_block{true};
 };
 
 const std::unordered_map<TokenType, Parser::StmtParser, Parser::EnumClassHash> Parser::kStmtDispatch = {
@@ -854,6 +879,8 @@ const std::unordered_map<TokenType, Parser::StmtParser, Parser::EnumClassHash> P
     {TokenType::Do, &Parser::parse_do_stmt},
     {TokenType::While, &Parser::parse_while_stmt},
     {TokenType::For, &Parser::parse_for_stmt},
+    {TokenType::Break, &Parser::parse_break_stmt},
+    {TokenType::Continue, &Parser::parse_continue_stmt},
     {TokenType::Log, &Parser::parse_log_stmt},
     {TokenType::Let, &Parser::parse_let_stmt},
     {TokenType::Return, &Parser::parse_return_stmt},

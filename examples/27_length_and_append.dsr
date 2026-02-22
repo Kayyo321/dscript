@@ -1,0 +1,25 @@
+fn main() {
+    log('== length + append ==');
+
+    let text = 'hello';
+    log('text length:');
+    log(length(text));
+
+    let text2 = append(text, ' world');
+    log('appended string:');
+    log(text2);
+    log('appended string length:');
+    log(length(text2));
+
+    let items = [1, 2, 3];
+    log('list length before:');
+    log(length(items));
+
+    append(items, 4);
+    append(items, 5);
+
+    log('list after append:');
+    log(items);
+    log('list length after:');
+    log(length(items));
+}

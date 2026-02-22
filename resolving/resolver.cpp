@@ -129,13 +129,16 @@ Value Resolver::visit_let_stmt(LetStmt *stmt) {
 }
 
 Value Resolver::visit_while_stmt(WhileStmt *stmt) {
+    ++loop_depth;
     resolve(stmt->condition);
     resolve(stmt->body);
+    --loop_depth;
     resolve(stmt->finally_clause);
     return Value::none();
 }
 
 Value Resolver::visit_for_stmt(ForStmt *stmt) {
+    ++loop_depth;
     begin_scope();
     resolve(stmt->init);
     resolve(stmt->condition);
@@ -143,6 +146,32 @@ Value Resolver::visit_for_stmt(ForStmt *stmt) {
     resolve(stmt->body);
     resolve(stmt->finally_clause);
     end_scope();
+    --loop_depth;
+    return Value::none();
+}
+
+Value Resolver::visit_do_while_stmt(DoWhileStmt *stmt) {
+    ++loop_depth;
+    resolve(stmt->body);
+    resolve(stmt->condition);
+    --loop_depth;
+    resolve(stmt->finally_clause);
+    return Value::none();
+}
+
+Value Resolver::visit_break_stmt(BreakStmt *stmt) {
+    if (loop_depth <= 0) {
+        error_at(stmt->keyword, "Cannot use 'break' outside of a loop.");
+    }
+
+    return Value::none();
+}
+
+Value Resolver::visit_continue_stmt(ContinueStmt *stmt) {
+    if (loop_depth <= 0) {
+        error_at(stmt->keyword, "Cannot use 'continue' outside of a loop.");
+    }
+
     return Value::none();
 }
 
