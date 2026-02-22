@@ -84,11 +84,11 @@ class Interpreter {
         }
 
         if op is '/' then {
-            return checked_div(lhs, rhs);
+            return checked_div lhs, rhs;
         }
 
         if op is '%' then {
-            return checked_mod(lhs, rhs);
+            return checked_mod lhs, rhs;
         }
 
         if op is '^' then {
