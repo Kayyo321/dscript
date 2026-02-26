@@ -118,6 +118,25 @@ x i = 10 {
 - `$name` receives a block argument
 - Named blocks can be optional (`none`) and checked at runtime
 
+## Class extras: private fields + default init
+
+dscript classes support a private-field declaration block and an `init` shorthand:
+
+```dsr
+class Reader {
+    (
+        idx = 0,
+        script,
+    )
+
+    fn init(script) = def;
+}
+```
+
+- Fields listed in `(...)` are private to the declaring class methods.
+- `fn init(a, b, ...) = def;` expands to assigning each parameter to `self` (`self.a = a`, `self.b = b`, ...).
+- Private fields can include default values (`name = expr`) or omit them (defaults to `none`).
+
 ## Feature tour (examples)
 
 - Literals/operators: `examples/01_literals_and_ops.dsr`
@@ -127,6 +146,7 @@ x i = 10 {
 - Expr/block identifiers: `examples/10_expr_and_block_identifiers.dsr`
 - Named blocks: `examples/12_named_blocks_and_none.dsr`
 - Classes/inheritance: `examples/08_classes_fields_methods.dsr`, `examples/09_inheritance_super_self.dsr`
+- Private members + default initializer: `examples/29_private_members.dsr`, `examples/30_default_initializer.dsr`
 - Imports/modules: `examples/23_imports_and_modules.dsr`
 - Stdlib I/O: `examples/24_stdlib_io.dsr`
 
