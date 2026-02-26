@@ -70,6 +70,21 @@ Artifact contents include:
 - Module import mapping for cross-module execution
 - Runtime artifact imports (`import './other.dsar' as mod`) from scripts or other artifacts
 
+<table>
+    <tr>
+        <td valign="top" width="190">
+            <a href="imgs/bench.png">
+                <img src="imgs/bench.png" alt="Fibonacci benchmark results" width="260" />
+            </a>
+        </td>
+        <td valign="top">
+            <strong>Fibonacci benchmark snapshot</strong><br />
+            Console timing summary (Linux <code>time</code>): running <code>fibonacci(100)</code> from source took about <code>0m0.010s</code>. Building an artifact took about <code>0m0.003s</code>, and running that built artifact took about <code>0m0.003s</code>.<br />
+            In short: for this tiny workload, artifact execution is faster than direct source execution, and even build+run combined (~<code>0m0.006s</code>) was lower than the source-only run in this measurement. Click the preview to open the full-size chart.
+        </td>
+    </tr>
+</table>
+
 ## Signature feature #1: custom keywords with `def`
 
 `def` lets you build callables that are invoked in keyword-like style:
