@@ -81,6 +81,7 @@ private:
 	void execute(const StmtPtr &stmt);
 	std::shared_ptr<ObjModule> load_module(const std::string &raw_path, const FilePos &location);
 	std::shared_ptr<ObjModule> load_stdlib_module(const std::string &name, const FilePos &location);
+	std::string ensure_artifact_registered(const std::string &artifact_path, const FilePos &location);
 	std::optional<std::string> resolve_precompiled_import_id(const std::string &raw_path) const;
 	std::string resolve_module_path(const std::string &raw_path) const;
 	std::vector<std::string> read_module_lines(const std::string &path) const;
@@ -110,6 +111,7 @@ private:
 	};
 	std::unordered_map<std::string, PrecompiledModule> precompiled_modules;
 	std::vector<std::string> precompiled_module_stack;
+	std::unordered_map<std::string, std::string> artifact_entry_modules;
 	std::vector<std::string> class_access_stack;
 	std::unordered_map<std::string, Value> *active_module_exports{nullptr};
 };

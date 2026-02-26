@@ -68,6 +68,7 @@ Artifact contents include:
 - Full AST for each module
 - Resolved locals metadata used by runtime variable resolution
 - Module import mapping for cross-module execution
+- Runtime artifact imports (`import './other.dsar' as mod`) from scripts or other artifacts
 
 ## Signature feature #1: custom keywords with `def`
 

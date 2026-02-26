@@ -104,6 +104,15 @@ std::string resolve_file_import(const std::string &current_module_path, const st
     return fs::weakly_canonical(candidate).string();
 }
 
+bool has_artifact_extension(const std::string &path) {
+    if (path.size() < std::char_traits<char>::length(ArtifactExtension)) {
+        return false;
+    }
+
+    return path.compare(path.size() - std::char_traits<char>::length(ArtifactExtension),
+        std::char_traits<char>::length(ArtifactExtension), ArtifactExtension) == 0;
+}
+
 void collect_raw_imports_from_stmt(const StmtPtr &stmt, std::vector<std::string> &out) {
     if (stmt == nullptr) {
         return;
@@ -233,6 +242,11 @@ bool analyze_module_recursive(
 
         const std::string resolved = resolve_file_import(module_path, raw_import);
         if (resolved.empty()) {
+            module.external_imports.push_back(raw_import);
+            continue;
+        }
+
+        if (has_artifact_extension(resolved)) {
             module.external_imports.push_back(raw_import);
             continue;
         }

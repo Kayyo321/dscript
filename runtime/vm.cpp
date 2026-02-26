@@ -7,11 +7,27 @@
 #include <set>
 #include <sstream>
 
+#include "../app/artifact_loader.h"
 #include "../lexing/lexer.h"
 #include "../parsing/parser.h"
 #include "../resolving/resolver.h"
 #include "stdlibs/registry.h"
 #include "throwables.h"
+
+namespace {
+
+constexpr const char *ArtifactExtension = ".dsar";
+
+bool has_artifact_extension(const std::string &path) {
+	if (path.size() < std::char_traits<char>::length(ArtifactExtension)) {
+		return false;
+	}
+
+	return path.compare(path.size() - std::char_traits<char>::length(ArtifactExtension),
+		std::char_traits<char>::length(ArtifactExtension), ArtifactExtension) == 0;
+}
+
+} // namespace
 
 static const char *kind_to_string(const RuntimeErrorKind kind) {
 	switch (kind) {
@@ -234,6 +250,45 @@ void Vm::register_precompiled_module(
 void Vm::clear_precompiled_modules() {
 	precompiled_modules.clear();
 	precompiled_module_stack.clear();
+	artifact_entry_modules.clear();
+}
+
+std::string Vm::ensure_artifact_registered(const std::string &artifact_path, const FilePos &location) {
+	if (const auto it = artifact_entry_modules.find(artifact_path); it != artifact_entry_modules.end()) {
+		return it->second;
+	}
+
+	ArtifactProgram program;
+	std::string load_error;
+	if (!load_artifact_program(artifact_path, program, load_error)) {
+		throw CallError(load_error, location);
+	}
+
+	const std::string module_prefix = "artifact:" + artifact_path + "::";
+
+	for (const auto &[module_id, module] : program.modules) {
+		std::unordered_map<std::string, std::string> remapped_import_map;
+		for (const auto &[raw, target] : module.import_map) {
+			remapped_import_map.insert_or_assign(raw, module_prefix + target);
+		}
+
+		std::string source_path_hint = module.source_path;
+		if (source_path_hint.empty()) {
+			source_path_hint = artifact_path;
+		}
+
+		register_precompiled_module(
+			module_prefix + module_id,
+			module.ast,
+			module.resolved_locals,
+			remapped_import_map,
+			source_path_hint
+		);
+	}
+
+	const std::string entry_module_id = module_prefix + program.entry_module;
+	artifact_entry_modules.insert_or_assign(artifact_path, entry_module_id);
+	return entry_module_id;
 }
 
 std::optional<std::string> Vm::resolve_precompiled_import_id(const std::string &raw_path) const {
@@ -381,6 +436,28 @@ std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const Fi
 	}
 
 	const std::string resolved_path = resolve_module_path(raw_path);
+	if (has_artifact_extension(resolved_path)) {
+		if (const auto it = module_cache.find(resolved_path); it != module_cache.end()) {
+			return it->second;
+		}
+
+		if (loading_modules.find(resolved_path) != loading_modules.end()) {
+			throw CallError("Circular import detected for module '" + resolved_path + "'.", location);
+		}
+
+		loading_modules.insert(resolved_path);
+		try {
+			const std::string entry_module_id = ensure_artifact_registered(resolved_path, location);
+			auto module = load_module(entry_module_id, location);
+			module_cache.insert_or_assign(resolved_path, module);
+			loading_modules.erase(resolved_path);
+			return module;
+		} catch (...) {
+			loading_modules.erase(resolved_path);
+			throw;
+		}
+	}
+
 	if (const auto it = module_cache.find(resolved_path); it != module_cache.end()) {
 		return it->second;
 	}
