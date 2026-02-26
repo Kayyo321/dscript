@@ -25,7 +25,7 @@ public:
 	void interpret(const std::vector<StmtPtr> &statements);
 	void execute_block(const std::vector<StmtPtr> &statements, const std::shared_ptr<Environment> &environment);
 	void set_locals(const std::unordered_map<const Expr *, int> &resolved_locals);
-	void set_source(std::string path, std::vector<std::string> lines);
+	void set_source(std::string path);
 	bool invoke_main_if_present();
 
 	Value visit_block_stmt(BlockStmt *stmt) override;
@@ -86,6 +86,7 @@ private:
 	std::unordered_map<const Expr *, int> locals;
 	std::string source_path;
 	std::vector<std::string> source_lines;
+	std::unordered_map<std::string, std::vector<std::string>> source_lines_by_path;
 	std::unordered_map<std::string, std::shared_ptr<ObjModule>> module_cache;
 	std::set<std::string> loading_modules;
 	std::unordered_map<std::string, Value> *active_module_exports{nullptr};

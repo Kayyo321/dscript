@@ -184,7 +184,9 @@ Token Lexer::eat_then_compile(const TokenType type, const std::size_t bytes) {
 }
 
 StringLexer::StringLexer(std::string sv)
-    : text{std::move(sv)}, iter{text.begin()} {}
+    : text{std::move(sv)}, iter{text.begin()} {
+    token_factory.file_pos_factory.current.path = "<string>";
+}
 
 char StringLexer::peek(const int offset) {
     if (offset > 0 && (iter + offset) > text.end()) {
@@ -213,7 +215,9 @@ char StringLexer::next(const bool feed) {
 }
 
 FileLexer::FileLexer(const std::string &path)
-    : file{std::ifstream(path)} {}
+    : file{std::ifstream(path)} {
+    token_factory.file_pos_factory.current.path = path;
+}
 
 char FileLexer::peek(const int offset) {
     const std::streampos current = file.tellg();

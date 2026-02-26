@@ -202,9 +202,18 @@ void Vm::set_locals(const std::unordered_map<const Expr *, int> &resolved_locals
 	locals = resolved_locals;
 }
 
-void Vm::set_source(std::string path, std::vector<std::string> lines) {
+void Vm::set_source(std::string path) {
 	source_path = std::move(path);
-	source_lines = std::move(lines);
+	source_lines.clear();
+
+	if (!source_path.empty()) {
+		std::ifstream in(source_path);
+		std::string line;
+		while (std::getline(in, line)) {
+			source_lines.push_back(line);
+		}
+		source_lines_by_path.insert_or_assign(source_path, source_lines);
+	}
 }
 
 std::string Vm::resolve_module_path(const std::string &raw_path) const {
@@ -300,6 +309,7 @@ std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const Fi
 		}
 		source_path = resolved_path;
 		source_lines = read_module_lines(resolved_path);
+		source_lines_by_path.insert_or_assign(resolved_path, source_lines);
 
 		auto module_env = std::make_shared<Environment>(globals);
 		environment = module_env;
@@ -335,9 +345,20 @@ std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const Fi
 std::string Vm::format_runtime_error(const RuntimeError &error) const {
 	std::ostringstream oss;
 	oss << kind_to_string(error.kind);
+	std::string error_path = source_path;
 
 	if (error.location.has_value()) {
-		oss << " [line " << error.location->line_no << ", col " << error.location->column_no << "]";
+		if (!error.location->path.empty()) {
+			error_path = error.location->path;
+		}
+
+		if (!error_path.empty()) {
+			oss << " [" << error_path << ':';
+		} else {
+			oss << " [";
+		}
+
+		oss << "line " << error.location->line_no << ", col " << error.location->column_no << "]";
 	}
 
 	oss << ": " << error.what();
@@ -346,8 +367,19 @@ std::string Vm::format_runtime_error(const RuntimeError &error) const {
 		const std::size_t line_no = error.location->line_no;
 		const std::size_t col_no = error.location->column_no;
 
-		if (line_no >= 1 && line_no <= source_lines.size()) {
-			const std::string &line = source_lines[line_no - 1];
+		const std::vector<std::string> *lines = nullptr;
+		if (!error_path.empty()) {
+			if (const auto it = source_lines_by_path.find(error_path); it != source_lines_by_path.end()) {
+				lines = &it->second;
+			}
+		}
+
+		if (lines == nullptr) {
+			lines = &source_lines;
+		}
+
+		if (line_no >= 1 && line_no <= lines->size()) {
+			const std::string &line = (*lines)[line_no - 1];
 			const std::size_t highlight_len = compute_highlight_length(line, col_no);
 			oss << '\n' << line_no << " | " << line;
 

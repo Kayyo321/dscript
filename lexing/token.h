@@ -6,6 +6,7 @@
 #define DSCRIPT_TOKEN_H
 
 #include <sstream>
+#include <string>
 
 enum class TokenType {
     EndOfInput,
@@ -77,6 +78,7 @@ enum class TokenType {
 
 struct FilePos {
     std::size_t line_no{1}, column_no{1};
+    std::string path{};
 };
 
 struct FilePosFactory {

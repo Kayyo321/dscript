@@ -403,6 +403,10 @@ void Resolver::resolve_local(const Expr *expr, const Token &name) {
 
 void Resolver::error_at(const Token &token, const std::string &message) {
     std::ostringstream oss;
-    oss << "[line " << token.file_pos.line_no << ", col " << token.file_pos.column_no << "] ResolverError: " << message;
+    oss << '[';
+    if (!token.file_pos.path.empty()) {
+        oss << token.file_pos.path << ':';
+    }
+    oss << "line " << token.file_pos.line_no << ", col " << token.file_pos.column_no << "] ResolverError: " << message;
     errors.push_back(oss.str());
 }

@@ -75,7 +75,7 @@ public:
 
 private:
     std::string text{};
-    std::string::const_iterator iter{nullptr};
+    std::string::const_iterator iter{};
 };
 
 class FileLexer: public Lexer {
