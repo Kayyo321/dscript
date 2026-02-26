@@ -1068,7 +1068,25 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 			args.push_back(evaluate(argument));
 		}
 
-		if (static_cast<int>(args.size()) != callable->arity()) {
+		if (const auto klass = std::dynamic_pointer_cast<ObjClass>(callee.as.object); klass != nullptr) {
+			const auto init = klass->find_method("init");
+			const int required = callable->arity();
+
+			bool has_variadic_param = false;
+			if (init != nullptr) {
+				for (const auto &param : init->declaration->params) {
+					if (param.is_variadic) {
+						has_variadic_param = true;
+						break;
+					}
+				}
+			}
+
+			const int actual = static_cast<int>(args.size());
+			if ((has_variadic_param && actual < required) || (!has_variadic_param && actual != required)) {
+				throw ArityError("Argument count mismatch.", expr->paren.file_pos);
+			}
+		} else if (static_cast<int>(args.size()) != callable->arity()) {
 			throw ArityError("Argument count mismatch.", expr->paren.file_pos);
 		}
 	}

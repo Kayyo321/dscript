@@ -182,6 +182,29 @@ void Lexer::skip_whitespace() {
             continue;
         }
 
+        if (peek(0) == '/' && peek(1) == '*') {
+            next(false);
+            next(false);
+
+            bool terminated = false;
+            while (!is_at_end()) {
+                if (peek(0) == '*' && peek(1) == '/') {
+                    next(false);
+                    next(false);
+                    terminated = true;
+                    break;
+                }
+
+                next(false);
+            }
+
+            if (!terminated) {
+                had_error = true;
+            }
+
+            continue;
+        }
+
         break;
     }
 }
