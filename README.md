@@ -149,6 +149,7 @@ class Reader {
 - Classes/inheritance: `examples/08_classes_fields_methods.dsr`, `examples/09_inheritance_super_self.dsr`
 - Private members + default initializer: `examples/29_private_members.dsr`, `examples/30_default_initializer.dsr`
 - Imports/modules: `examples/23_imports_and_modules.dsr`
+- Artifact imports: `examples/31_artifact_imports.dsr` (build `examples/lib/math.dsr` to `examples/lib/math.dsar` first)
 - Stdlib I/O: `examples/24_stdlib_io.dsr`
 
 ## Build options

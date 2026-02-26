@@ -1,0 +1,9 @@
+import './lib/math.dsar' as math;
+from './lib/math.dsar' import add as plus;
+
+export fn main() {
+    log('== artifact imports ==');
+    log(math.version);
+    log(math.times(6, 7));
+    log(plus(20, 22));
+}
