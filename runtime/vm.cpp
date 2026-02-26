@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "../app/artifact_loader.h"
+#include "../app/cli.h"
 #include "../lexing/lexer.h"
 #include "../parsing/parser.h"
 #include "../resolving/resolver.h"
@@ -15,8 +16,6 @@
 #include "throwables.h"
 
 namespace {
-
-constexpr const char *ArtifactExtension = ".dsar";
 
 bool has_artifact_extension(const std::string &path) {
 	if (path.size() < std::char_traits<char>::length(ArtifactExtension)) {

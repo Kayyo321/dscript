@@ -20,7 +20,6 @@
 #include "../runtime/vm.h"
 
 #define Version "0.1.0"
-#define ArtifactExtension ".dsar" // DScript ARtifact
 
 namespace {
 
