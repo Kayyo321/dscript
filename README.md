@@ -13,8 +13,52 @@ A small, expressive scripting language in C++ focused on personalization.
 
 ```bash
 ./build.sh
+./build/dscript --run examples/18_def_keyword_showcase.dsr
+```
+
+## CLI
+
+`dscript` supports these modes:
+
+```bash
+./build/dscript --repl
+./build/dscript --run <script_or_artifact>
+./build/dscript --build <entry_script> [artifact_path]
+./build/dscript --help
+./build/dscript --version
+```
+
+Backward-compatible script invocation still works:
+
+```bash
 ./build/dscript examples/18_def_keyword_showcase.dsr
 ```
+
+## Build artifacts (`.dsr.json`)
+
+`--build` resolves modules and emits a self-contained JSON artifact that can be run on another system without source files.
+
+Default output naming:
+
+- Input `foo.dsr` -> output `foo.dsr.json`
+- You can override with an explicit `artifact_path`
+
+Typical flow:
+
+```bash
+# Build artifact
+./build/dscript --build examples/23_imports_and_modules.dsr
+
+# Run artifact
+./build/dscript --run examples/23_imports_and_modules.dsr.json
+```
+
+Artifact contents include:
+
+- Entry module ID
+- Full AST for each module
+- Resolved locals metadata used by runtime variable resolution
+- Module import mapping for cross-module execution
 
 ## Signature feature #1: custom keywords with `def`
 
@@ -81,6 +125,10 @@ x i = 10 {
 
 - Dev build: `./build.sh [BuildType] [BuildDir]`
 - Release matrix build: `./build_release.sh [BuildRoot]`
+
+### Notes
+
+- Artifact extension is configured in `app/cli.cpp` via a preprocessor definition near `Version`.
 
 ## Project layout
 
