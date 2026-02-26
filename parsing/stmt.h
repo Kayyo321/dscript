@@ -74,10 +74,27 @@ public:
 
 class FunctionStmt : public Stmt {
 public:
-    FunctionStmt(Token name, std::vector<Token> params, std::vector<StmtPtr> body, bool isStatic)
+    class Parameter {
+    public:
+        static Parameter regular(Token name) {
+            return Parameter(std::move(name), false);
+        }
+
+        static Parameter variadic(Token name) {
+            return Parameter(std::move(name), true);
+        }
+
+        Token name;
+        bool is_variadic;
+
+    private:
+        Parameter(Token name, bool is_variadic) : name(std::move(name)), is_variadic(is_variadic) {}
+    };
+
+    FunctionStmt(Token name, std::vector<Parameter> params, std::vector<StmtPtr> body, bool isStatic)
         : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
     
-    FunctionStmt(Token name, std::vector<Token> params, std::vector<BlockLiteral> blocks, std::vector<StmtPtr> body, bool isStatic)
+    FunctionStmt(Token name, std::vector<Parameter> params, std::vector<BlockLiteral> blocks, std::vector<StmtPtr> body, bool isStatic)
         : name(std::move(name)), params(std::move(params)), blocks{std::move(blocks)}, body(std::move(body)) {}
 
     Value accept(AVisitor *visitor) override {
@@ -85,7 +102,7 @@ public:
     }
 
     Token name;
-    std::vector<Token> params;
+    std::vector<Parameter> params;
     std::optional<std::vector<BlockLiteral>> blocks;
     std::vector<StmtPtr> body;
 };

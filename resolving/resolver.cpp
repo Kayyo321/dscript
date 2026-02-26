@@ -222,7 +222,7 @@ Value Resolver::visit_call_expr(CallExpr *expr) {
 }
 
 Value Resolver::visit_function_expr(FunctionExpr *expr) {
-    resolve_function({}, std::nullopt, expr->body, FunctionType::Function);
+    resolve_function(std::vector<Token>{}, std::nullopt, expr->body, FunctionType::Function);
     return Value::none();
 }
 
@@ -329,6 +329,37 @@ void Resolver::resolve(const ExprPtr &expression) {
     if (expression != nullptr) {
         expression->accept(this);
     }
+}
+
+void Resolver::resolve_function(const std::vector<FunctionStmt::Parameter> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, const FunctionType type) {
+    const FunctionType enclosing_function = current_function;
+    current_function = type;
+
+    begin_scope();
+    for (const FunctionStmt::Parameter &param : params) {
+        declare(param.name);
+        define(param.name);
+    }
+
+    if (blocks.has_value()) {
+        for (const auto &block : blocks.value()) {
+            declare(block.name);
+            define(block.name);
+
+            if (block.expect.has_value()) {
+                declare(block.expect.value());
+                define(block.expect.value());
+            }
+        }
+    }
+
+    for (const StmtPtr &statement : body) {
+        resolve(statement);
+    }
+
+    end_scope();
+
+    current_function = enclosing_function;
 }
 
 void Resolver::resolve_function(const std::vector<Token> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, const FunctionType type) {

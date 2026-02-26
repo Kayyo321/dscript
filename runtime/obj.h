@@ -17,6 +17,7 @@ enum class ObjType {
     String,
     List,
     Module,
+    Variadic,
     Error,
 };
 

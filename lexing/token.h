@@ -67,6 +67,7 @@ enum class TokenType {
     RightBrace,
     Comma,
     Period,
+    Ellipse,
     Colon,
     Semicolon,
     GreaterThan,

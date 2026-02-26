@@ -174,13 +174,19 @@ private:
         return statements;
     }
 
-    std::vector<Token> parse_params() {
-        std::vector<Token> params;
+    std::vector<FunctionStmt::Parameter> parse_params() {
+        std::vector<FunctionStmt::Parameter> params;
         consume_or_throw(TokenType::LeftParen, "Expected '(' before parameter list.");
 
         while (!is_at_end() && !check(TokenType::RightParen)) {
             if (check(TokenType::Identifier) || check(TokenType::ExprIdentifier)) {
-                params.push_back(advance());
+                params.push_back(FunctionStmt::Parameter::regular(advance()));
+            } else if (check(TokenType::Ellipse)) {
+                advance();
+                Token param_name = consume_or_throw(TokenType::Identifier, "Expected parameter name after '...'.");
+                params.push_back(FunctionStmt::Parameter::variadic(param_name));
+
+                break;
             } else {
                 throw ParseError("Expected parameter name.");
             }
@@ -275,7 +281,7 @@ private:
         static const Token anonymous{TokenType::Identifier, "<anonymous-fn>", FilePos{}};
 
         Token name = consume(TokenType::Identifier, anonymous);
-        const std::vector<Token> params = parse_params();
+        const std::vector<FunctionStmt::Parameter> params = parse_params();
         const std::optional<std::vector<BlockLiteral>> blocks = parse_block_literals_if_present();
         const std::vector<StmtPtr> body = parse_decl_body();
 
@@ -290,7 +296,7 @@ private:
 
         Token name = consume(TokenType::Identifier, anonymous);
 
-        std::vector<Token> params;
+        std::vector<FunctionStmt::Parameter> params;
         if (check(TokenType::LeftParen)) {
             params = parse_params();
         }

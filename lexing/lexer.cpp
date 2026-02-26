@@ -133,7 +133,10 @@ Token Lexer::symbol() {
             if (peek(1) == '=') return eat_then_compile(TokenType::PowerEquals, 2);
             return eat_then_compile(TokenType::Power);
 
-        case '.': return eat_then_compile(TokenType::Period);
+        case '.': 
+            if (peek(1) == '.' && peek(2) == '.') return eat_then_compile(TokenType::Ellipse, 3);
+            return eat_then_compile(TokenType::Period);
+
         case ',': return eat_then_compile(TokenType::Comma);
         case ':': return eat_then_compile(TokenType::Colon);
         case ';': return eat_then_compile(TokenType::Semicolon);
@@ -143,6 +146,7 @@ Token Lexer::symbol() {
         case ']': return eat_then_compile(TokenType::RightBracket);
         case '{': return eat_then_compile(TokenType::LeftBrace);
         case '}': return eat_then_compile(TokenType::RightBrace);
+
         case '=':
             if (peek(1) == '=') return eat_then_compile(TokenType::Is, 2);
             else return eat_then_compile(TokenType::Equals);

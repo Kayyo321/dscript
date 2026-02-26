@@ -158,4 +158,15 @@ public:
     std::string message;
 };
 
+class Variadic: public Obj {
+public:
+    explicit Variadic(std::vector<Value> elements);
+
+    bool operator==(const Obj &other) override;
+    void print(std::ostream &os) override;
+    Value index(const Value &key) override;
+
+    std::vector<Value> elements;
+};
+
 #endif //DSCRIPT_OBJS_H

@@ -54,8 +54,12 @@ Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
     const auto env = std::make_shared<Environment>(closure);
 
     std::size_t arg_idx = 0;
-    for (const auto &param : declaration->params) {
-        env->define(param.literal.lexeme, args[arg_idx++]);
+    for (const FunctionStmt::Parameter &param : declaration->params) {
+        if (param.is_variadic) {
+
+        } else {
+            env->define(param.name.literal.lexeme, args[arg_idx++]);
+        }
     }
 
     if (declaration->blocks.has_value()) {
@@ -353,3 +357,6 @@ Value ObjError::index(const Value &key) {
 
     throw IndexError("Unknown error index key '" + key_string->chars + "'.");
 }
+
+Variadic::Variadic(std::vector<Value> elements)
+    : Obj(ObjType::Variadic), elements(std::move(elements)) {}
