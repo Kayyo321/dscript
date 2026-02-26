@@ -1,0 +1,8 @@
+class Default {
+    fn init(val1, val2) = def;
+}
+
+fn main() {
+    let d = Default(1, 2); 
+    log(d.val1 + d.val2);
+}

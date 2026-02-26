@@ -572,10 +572,40 @@ Value Vm::visit_class_stmt(ClassStmt *stmt) {
 	std::map<std::string, std::shared_ptr<ObjFunction>> methods;
 	for (const auto &method : stmt->methods) {
 		const bool is_init = method->name.literal.lexeme == "init";
-		methods.insert_or_assign(method->name.literal.lexeme, std::make_shared<ObjFunction>(method, environment, is_init));
+		methods.insert_or_assign(method->name.literal.lexeme, std::make_shared<ObjFunction>(method, environment, is_init, stmt->name.literal.lexeme));
 	}
 
-	const auto klass = std::make_shared<ObjClass>(stmt->name.literal.lexeme, methods);
+	std::set<std::string> private_fields;
+	std::vector<StmtPtr> field_init_body;
+	field_init_body.reserve(stmt->private_fields.size());
+	for (const auto &field : stmt->private_fields) {
+		private_fields.insert(field.name.literal.lexeme);
+
+		const Token self_token{TokenType::Identifier, "self", field.name.file_pos};
+		const ExprPtr self_expr = std::make_shared<SelfExpr>(self_token);
+		ExprPtr value_expr = field.init;
+		if (value_expr == nullptr) {
+			value_expr = std::make_shared<LiteralExpr>(Value::none());
+		}
+
+		field_init_body.push_back(
+			std::make_shared<ExpressionStmt>(std::make_shared<SetExpr>(self_expr, field.name, value_expr))
+		);
+	}
+
+	std::shared_ptr<ObjFunction> field_initializer = nullptr;
+	if (!field_init_body.empty()) {
+		const Token field_init_name{TokenType::Identifier, "<private-init>", stmt->name.file_pos};
+		auto field_init_declaration = std::make_shared<FunctionStmt>(
+			field_init_name,
+			std::vector<FunctionStmt::Parameter>{},
+			field_init_body,
+			false
+		);
+		field_initializer = ObjFunction::basic(field_init_declaration, environment, stmt->name.literal.lexeme);
+	}
+
+	const auto klass = std::make_shared<ObjClass>(stmt->name.literal.lexeme, methods, private_fields, field_initializer);
 
 	if (super_class_obj != nullptr) {
 		environment = environment->ancestor(1);
@@ -1096,7 +1126,7 @@ Value Vm::visit_get_expr(GetExpr *expr) {
 		throw TypeError("Only instances have properties.", expr->name.file_pos);
 	}
 
-	return instance->get(expr->name.literal.lexeme);
+	return instance->get(expr->name.literal.lexeme, current_class_access());
 }
 
 Value Vm::visit_grouping_expr(GroupingExpr *expr) {
@@ -1137,7 +1167,7 @@ Value Vm::visit_set_expr(SetExpr *expr) {
 	}
 
 	const Value value = evaluate(expr->value);
-	instance->set(expr->name.literal.lexeme, value);
+	instance->set(expr->name.literal.lexeme, value, current_class_access());
 	return value;
 }
 
@@ -1213,11 +1243,11 @@ Value Vm::visit_update_expr(UpdateExpr *expr) {
 			throw TypeError("Only instances have fields.", get->name.file_pos);
 		}
 
-		const Value current = instance->get(get->name.literal.lexeme);
+		const Value current = instance->get(get->name.literal.lexeme, current_class_access());
 		assert_number_operand(expr->op, current);
 
 		const Value updated = Value::number(current.as.number + delta);
-		instance->set(get->name.literal.lexeme, updated);
+		instance->set(get->name.literal.lexeme, updated, current_class_access());
 		return expr->is_prefix ? updated : current;
 	}
 
@@ -1305,4 +1335,21 @@ std::string Vm::stringify(const Value &value) {
 	std::ostringstream oss;
 	value.print(oss);
 	return oss.str();
+}
+
+void Vm::push_class_access(const std::string &class_name) {
+	class_access_stack.push_back(class_name);
+}
+
+void Vm::pop_class_access() {
+	if (!class_access_stack.empty()) {
+		class_access_stack.pop_back();
+	}
+}
+
+std::string Vm::current_class_access() const {
+	if (class_access_stack.empty()) {
+		return "";
+	}
+	return class_access_stack.back();
 }

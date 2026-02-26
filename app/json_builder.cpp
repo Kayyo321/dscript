@@ -194,6 +194,22 @@ std::string JsonAstBuilder::serialize_import_names(const std::vector<ImportName>
     return names_json.str();
 }
 
+std::string JsonAstBuilder::serialize_class_fields(const std::vector<ClassField> &fields, JsonAstBuilder &builder) {
+    std::ostringstream fields_json;
+    fields_json << "[";
+    for (std::size_t i = 0; i < fields.size(); ++i) {
+        if (i > 0) {
+            fields_json << ",";
+        }
+
+        fields_json << "{\"name\":" << serialize_token(fields[i].name)
+                    << ",\"init\":" << builder.serialize_expr(fields[i].init)
+                    << "}";
+    }
+    fields_json << "]";
+    return fields_json.str();
+}
+
 Value JsonAstBuilder::visit_block_stmt(BlockStmt *stmt) {
     current_json_ = "{\"type\":\"BlockStmt\",\"statements\":" + serialize_stmt_array(stmt->statements, *this) + "}";
     return Value::none();
@@ -212,7 +228,8 @@ Value JsonAstBuilder::visit_class_stmt(ClassStmt *stmt) {
 
     current_json_ = "{\"type\":\"ClassStmt\",\"name\":" + serialize_token(stmt->name) +
                     ",\"super\":" + serialize_expr(stmt->super_class) +
-                    ",\"methods\":" + methods.str() + "}";
+                    ",\"methods\":" + methods.str() +
+                    ",\"private_fields\":" + serialize_class_fields(stmt->private_fields, *this) + "}";
     return Value::none();
 }
 

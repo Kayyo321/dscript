@@ -251,6 +251,48 @@ private:
         return parse_block_statements();
     }
 
+    std::vector<ClassField> parse_class_private_fields() {
+        std::vector<ClassField> fields;
+
+        consume_or_throw(TokenType::LeftParen, "Expected '(' before private field list.");
+        while (!is_at_end() && !check(TokenType::RightParen)) {
+            Token field_name = consume_or_throw(TokenType::Identifier, "Expected private field name.");
+
+            ExprPtr init = nullptr;
+            if (match(TokenType::Equals)) {
+                init = parse_expression();
+            }
+
+            fields.emplace_back(field_name, init);
+
+            if (!match(TokenType::Comma)) {
+                break;
+            }
+        }
+
+        consume_or_throw(TokenType::RightParen, "Expected ')' after private field list.");
+        return fields;
+    }
+
+    std::vector<StmtPtr> parse_default_initializer_body(const FunctionStmt &function_stmt) {
+        if (function_stmt.name.literal.lexeme != "init") {
+            throw ParseError("Only 'init' can use '= def' shorthand.");
+        }
+
+        std::vector<StmtPtr> body;
+        body.reserve(function_stmt.params.size());
+
+        const Token self_token{TokenType::Identifier, "self", function_stmt.name.file_pos};
+        for (const auto &param : function_stmt.params) {
+            const ExprPtr self_expr = std::make_shared<SelfExpr>(self_token);
+            const ExprPtr value_expr = std::make_shared<VariableExpr>(param.name);
+            const ExprPtr set_expr = std::make_shared<SetExpr>(self_expr, param.name, value_expr);
+            body.push_back(std::make_shared<ExpressionStmt>(set_expr));
+        }
+
+        return body;
+    }
+
     StmtPtr parse_class_stmt() {
         static const Token anonymous{TokenType::Identifier, "<anonymous-class>", FilePos{}};
 
@@ -263,6 +305,11 @@ private:
 
         consume_or_throw(TokenType::LeftBrace, "Expected '{' before class body.");
 
+        std::vector<ClassField> private_fields;
+        if (check(TokenType::LeftParen)) {
+            private_fields = parse_class_private_fields();
+        }
+
         std::vector<std::shared_ptr<FunctionStmt>> methods;
         while (!is_at_end() && !check(TokenType::RightBrace)) {
             consume_or_throw(TokenType::Fn, "Expected 'fn' method declaration inside class.");
@@ -274,7 +321,7 @@ private:
         }
 
         consume_or_throw(TokenType::RightBrace, "Expected '}' after class body.");
-        return std::make_shared<ClassStmt>(name, super_class, methods, false, 0);
+        return std::make_shared<ClassStmt>(name, super_class, methods, private_fields, false, 0);
     }
 
     StmtPtr parse_fn_stmt() {
@@ -283,6 +330,20 @@ private:
         Token name = consume(TokenType::Identifier, anonymous);
         const std::vector<FunctionStmt::Parameter> params = parse_params();
         const std::optional<std::vector<BlockLiteral>> blocks = parse_block_literals_if_present();
+
+        if (match(TokenType::Equals)) {
+            consume_or_throw(TokenType::Def, "Expected 'def' after '=' in function shorthand.");
+            match(TokenType::Semicolon);
+
+            if (blocks.has_value()) {
+                throw ParseError("Function shorthand '= def' does not support block parameters.");
+            }
+
+            auto default_stmt = std::make_shared<FunctionStmt>(name, params, std::vector<StmtPtr>{}, false);
+            default_stmt->body = parse_default_initializer_body(*default_stmt);
+            return default_stmt;
+        }
+
         const std::vector<StmtPtr> body = parse_decl_body();
 
         if (blocks.has_value()) {
@@ -635,6 +696,13 @@ private:
         ExprPtr expr = parse_comparison();
 
         while (true) {
+            if (match(TokenType::Not)) {
+                Token op = previous();
+                ExprPtr right = parse_comparison();
+                expr = std::make_shared<BinaryExpr>(expr, op, right);
+                continue;
+            }
+
             if (match(TokenType::Is)) {
                 Token op = previous();
                 if (match(TokenType::Not)) {

@@ -37,10 +37,19 @@ public:
     std::vector<StmtPtr> statements;
 };
 
+class ClassField {
+public:
+    ClassField(Token name, ExprPtr init)
+        : name(std::move(name)), init(std::move(init)) {}
+
+    Token name;
+    ExprPtr init;
+};
+
 class ClassStmt : public Stmt {
 public:
-    ClassStmt(Token name, ExprPtr superStruct, std::vector<std::shared_ptr<FunctionStmt>> methods, bool isStatic, int status)
-        : name(std::move(name)), super_class(std::move(superStruct)), methods(std::move(methods)) {}
+    ClassStmt(Token name, ExprPtr superStruct, std::vector<std::shared_ptr<FunctionStmt>> methods, std::vector<ClassField> private_fields, bool isStatic, int status)
+        : name(std::move(name)), super_class(std::move(superStruct)), methods(std::move(methods)), private_fields(std::move(private_fields)) {}
 
     Value accept(AVisitor *visitor) override {
         return visitor->visit_class_stmt(this);
@@ -49,6 +58,7 @@ public:
     Token name;
     ExprPtr super_class;
     std::vector<std::shared_ptr<FunctionStmt>> methods;
+    std::vector<ClassField> private_fields;
 };
 
 class ExpressionStmt : public Stmt {

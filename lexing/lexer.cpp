@@ -151,6 +151,10 @@ Token Lexer::symbol() {
             if (peek(1) == '=') return eat_then_compile(TokenType::Is, 2);
             else return eat_then_compile(TokenType::Equals);
 
+        case '!':
+            if (peek(1) == '=') return eat_then_compile(TokenType::Not, 2);
+            return eat_then_compile(TokenType::Not);
+
         case '>':
             if (peek(1) == '=') return eat_then_compile(TokenType::GreaterEqual, 2);
             else return eat_then_compile(TokenType::GreaterThan);
@@ -165,8 +169,20 @@ Token Lexer::symbol() {
 }
 
 void Lexer::skip_whitespace() {
-    while (isspace(peek(0)) && !is_at_end()) {
-        next(false);
+    while (!is_at_end()) {
+        if (isspace(peek(0))) {
+            next(false);
+            continue;
+        }
+
+        if (peek(0) == '/' && peek(1) == '/') {
+            while (!is_at_end() && peek(0) != '\n') {
+                next(false);
+            }
+            continue;
+        }
+
+        break;
     }
 }
 

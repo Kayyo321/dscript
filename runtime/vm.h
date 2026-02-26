@@ -36,6 +36,9 @@ public:
 	);
 	void clear_precompiled_modules();
 	bool invoke_main_if_present();
+	void push_class_access(const std::string &class_name);
+	void pop_class_access();
+	std::string current_class_access() const;
 
 	Value visit_block_stmt(BlockStmt *stmt) override;
 	Value visit_class_stmt(ClassStmt *stmt) override;
@@ -107,6 +110,7 @@ private:
 	};
 	std::unordered_map<std::string, PrecompiledModule> precompiled_modules;
 	std::vector<std::string> precompiled_module_stack;
+	std::vector<std::string> class_access_stack;
 	std::unordered_map<std::string, Value> *active_module_exports{nullptr};
 };
 

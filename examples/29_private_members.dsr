@@ -1,0 +1,26 @@
+class Reader {
+    ( // these are private fields
+        idx = 0, 
+        script,
+    )
+
+    fn init(script) = def;
+
+    fn next_line() {
+        let out = ''
+        while self.script[self.idx] != '.' do {
+            out = out + self.script[self.idx++];
+        } finally {
+            out = out + self.script[self.idx++]; // grab the '.'
+        }
+
+        return out;
+    }
+}
+
+fn main() {
+    let r = Reader("nice. I love you so. Oh obito.");
+
+    log r.next_line();
+    log r.next_line();
+}

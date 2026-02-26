@@ -67,6 +67,7 @@ private:
     static std::string serialize_stmt_array(const std::vector<StmtPtr> &stmts, JsonAstBuilder &builder);
     static std::string serialize_expr_array(const std::vector<ExprPtr> &exprs, JsonAstBuilder &builder);
     static std::string serialize_params(const std::vector<FunctionStmt::Parameter> &params);
+    static std::string serialize_class_fields(const std::vector<ClassField> &fields, JsonAstBuilder &builder);
     static std::string serialize_block_literals(const std::optional<std::vector<BlockLiteral>> &blocks);
     static std::string serialize_import_names(const std::vector<ImportName> &names);
 };

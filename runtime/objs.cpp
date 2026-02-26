@@ -41,7 +41,7 @@ Value ObjString::index(const Value &key) {
 std::shared_ptr<ObjFunction> ObjFunction::bind(ObjInstance *inst) {
     const auto env = std::make_shared<Environment>(closure);
     env->define("self", Value::object(std::shared_ptr<ObjInstance>(inst, [](ObjInstance *) {})));
-    return std::make_shared<ObjFunction>(declaration, env, is_init);
+    return std::make_shared<ObjFunction>(declaration, env, is_init, owner_class_name);
 }
 
 int ObjFunction::arity() {
@@ -57,6 +57,10 @@ int ObjFunction::arity() {
 
 Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
     const auto env = std::make_shared<Environment>(closure);
+
+    if (!owner_class_name.empty()) {
+        vm->push_class_access(owner_class_name);
+    }
 
     std::size_t arg_idx = 0;
     const std::size_t block_count = declaration->blocks.has_value() ? declaration->blocks->size() : 0;
@@ -86,10 +90,23 @@ Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
     try {
         vm->execute_block(declaration->body, env);
     } catch (const Return &r) {
+        if (!owner_class_name.empty()) {
+            vm->pop_class_access();
+        }
+
         if (is_init) {
             return closure->get_at(0, "self");
         }
         return r.value;
+    } catch (...) {
+        if (!owner_class_name.empty()) {
+            vm->pop_class_access();
+        }
+        throw;
+    }
+
+    if (!owner_class_name.empty()) {
+        vm->pop_class_access();
     }
 
     if (is_init) {
@@ -105,7 +122,10 @@ bool ObjFunction::operator==(const Obj &other) {
     }
 
     const auto &function = static_cast<const ObjFunction &>(other);
-    return declaration == function.declaration && closure == function.closure && is_init == function.is_init;
+    return declaration == function.declaration
+        && closure == function.closure
+        && is_init == function.is_init
+        && owner_class_name == function.owner_class_name;
 }
 
 void ObjFunction::print(std::ostream &os) {
@@ -169,8 +189,17 @@ Value ObjNative::index(const Value &key) {
     throw IndexError("Unknown native function index key '" + key_string->chars + "'.");
 }
 
-ObjClass::ObjClass(std::string name, std::map<std::string, std::shared_ptr<ObjFunction>> methods)
-    : Callable(ObjType::Class), name(std::move(name)), methods(std::move(methods)) {}
+ObjClass::ObjClass(
+    std::string name,
+    std::map<std::string, std::shared_ptr<ObjFunction>> methods,
+    std::set<std::string> private_fields,
+    std::shared_ptr<ObjFunction> field_initializer
+)
+    : Callable(ObjType::Class),
+      name(std::move(name)),
+      methods(std::move(methods)),
+      private_fields(std::move(private_fields)),
+      field_initializer(std::move(field_initializer)) {}
 
 std::shared_ptr<ObjFunction> ObjClass::find_method(const std::string &method_name) const {
     const auto it = methods.find(method_name);
@@ -190,6 +219,11 @@ int ObjClass::arity() {
 
 Value ObjClass::call(Vm *vm, const std::vector<Value> &args) {
     const auto instance = std::make_shared<ObjInstance>(std::make_shared<ObjClass>(*this));
+
+    if (field_initializer != nullptr) {
+        field_initializer->bind(instance.get())->call(vm, {});
+    }
+
     const auto init = find_method("init");
     if (init != nullptr) {
         init->bind(instance.get())->call(vm, args);
@@ -244,7 +278,11 @@ Value ObjInstance::index(const Value &key) {
     return get(key_string->chars);
 }
 
-Value ObjInstance::get(const std::string &field_name) {
+Value ObjInstance::get(const std::string &field_name, const std::string &access_class_name) {
+    if (klass->private_fields.find(field_name) != klass->private_fields.end() && access_class_name != klass->name) {
+        throw PropertyError("Cannot access private property '" + field_name + "'.");
+    }
+
     const auto field_it = fields.find(field_name);
     if (field_it != fields.end()) {
         return field_it->second;
@@ -258,7 +296,11 @@ Value ObjInstance::get(const std::string &field_name) {
     throw PropertyError("Undefined property '" + field_name + "'.");
 }
 
-void ObjInstance::set(const std::string &field_name, Value value) {
+void ObjInstance::set(const std::string &field_name, Value value, const std::string &access_class_name) {
+    if (klass->private_fields.find(field_name) != klass->private_fields.end() && access_class_name != klass->name) {
+        throw PropertyError("Cannot assign private property '" + field_name + "'.");
+    }
+
     fields.insert_or_assign(field_name, std::move(value));
 }
 

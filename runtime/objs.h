@@ -16,6 +16,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -51,18 +52,18 @@ public:
 
 class ObjFunction: public Callable {
 public:
-    static std::shared_ptr<ObjFunction> basic(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure) {
-        return std::make_shared<ObjFunction>(declaration, closure, false);
+    static std::shared_ptr<ObjFunction> basic(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, std::string owner_class_name = "") {
+        return std::make_shared<ObjFunction>(declaration, closure, false, std::move(owner_class_name));
     }
 
-    static std::shared_ptr<ObjFunction> init(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure) {
-        return std::make_shared<ObjFunction>(declaration, closure, true);
+    static std::shared_ptr<ObjFunction> init(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, std::string owner_class_name = "") {
+        return std::make_shared<ObjFunction>(declaration, closure, true, std::move(owner_class_name));
     }
 
     std::shared_ptr<ObjFunction> bind(ObjInstance *inst);
 
-    ObjFunction(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, const bool is_init)
-        : Callable(ObjType::Function), declaration(std::move(declaration)), closure(std::move(closure)), is_init(is_init) {}
+    ObjFunction(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, const bool is_init, std::string owner_class_name = "")
+        : Callable(ObjType::Function), declaration(std::move(declaration)), closure(std::move(closure)), is_init(is_init), owner_class_name(std::move(owner_class_name)) {}
 
     int arity() override;
     Value call(Vm *vm, const std::vector<Value> &args) override;
@@ -73,6 +74,7 @@ public:
     std::shared_ptr<FunctionStmt> declaration;
     std::shared_ptr<Environment> closure;
     bool is_init;
+    std::string owner_class_name;
 };
 
 using NativeFn = Value(*)(const std::vector<Value> &);
@@ -93,7 +95,12 @@ public:
 
 class ObjClass : public Callable {
 public:
-    ObjClass(std::string name, std::map<std::string, std::shared_ptr<ObjFunction>> methods);
+    ObjClass(
+        std::string name,
+        std::map<std::string, std::shared_ptr<ObjFunction>> methods,
+        std::set<std::string> private_fields = {},
+        std::shared_ptr<ObjFunction> field_initializer = nullptr
+    );
 
     std::shared_ptr<ObjFunction> find_method(const std::string &method_name) const;
     int arity() override;
@@ -104,6 +111,8 @@ public:
 
     std::string name;
     std::map<std::string, std::shared_ptr<ObjFunction>> methods;
+    std::set<std::string> private_fields;
+    std::shared_ptr<ObjFunction> field_initializer;
 };
 
 class ObjInstance : public Obj {
@@ -114,8 +123,8 @@ public:
     void print(std::ostream &os) override;
     Value index(const Value &key) override;
 
-    Value get(const std::string &field_name);
-    void set(const std::string &field_name, Value value);
+    Value get(const std::string &field_name, const std::string &access_class_name = "");
+    void set(const std::string &field_name, Value value, const std::string &access_class_name = "");
 
     std::shared_ptr<ObjClass> klass;
     std::map<std::string, Value> fields;

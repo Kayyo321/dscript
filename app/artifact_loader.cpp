@@ -349,10 +349,17 @@ public:
                 }
                 methods.push_back(method_stmt);
             }
+
+            std::vector<ClassField> private_fields;
+            if (const auto private_fields_value = find_key(object, "private_fields"); private_fields_value.has_value()) {
+                private_fields = decode_class_fields(*private_fields_value.value());
+            }
+
             return std::make_shared<ClassStmt>(
                 decode_token(expect_key(object, "name", "ClassStmt")),
                 decode_expr(expect_key(object, "super", "ClassStmt")),
                 methods,
+                private_fields,
                 false,
                 0
             );
@@ -631,6 +638,18 @@ private:
             });
         }
         return names;
+    }
+
+    std::vector<ClassField> decode_class_fields(const JsonValue &value) {
+        std::vector<ClassField> fields;
+        for (const auto &entry : expect_array(value, "class fields")) {
+            const auto &object = expect_object(entry, "class field");
+            fields.emplace_back(
+                decode_token(expect_key(object, "name", "class field")),
+                decode_expr(expect_key(object, "init", "class field"))
+            );
+        }
+        return fields;
     }
 
     static Value decode_literal_value(const JsonValue &value) {
