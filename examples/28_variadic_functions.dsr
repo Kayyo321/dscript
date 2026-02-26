@@ -1,25 +1,21 @@
-fn collect(label, ...args) {
-    log('label: ' + label);
-    log('all args:');
-    log(args);
+fn format(fmt, ...args) {
+    let out = "";
 
-    log('first arg:');
-    log(args[0]);
+    let args_idx = 0;
+    for (let i = 0; i < length(fmt); ++i) do {
+        if fmt[i] == '$' then {
+            out = append(out, to_string(args[args_idx++]));
+        } else {
+            out = append(out, fmt[i]);
+        }
+    }
 
-    log('third arg:');
-    log(args[2]);
-}
-
-fn empty_tail(head, ...tail) {
-    log('head:');
-    log(head);
-    log('tail:');
-    log(tail);
+    return out;
 }
 
 fn main() {
     log('== variadic functions ==');
 
-    collect('nums', 10, 20, 30, 40);
-    empty_tail('only-one');
+    let fmt = format("hi $, you're $ years old", 'sully', 17);
+    log(fmt);
 }
