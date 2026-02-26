@@ -45,18 +45,29 @@ std::shared_ptr<ObjFunction> ObjFunction::bind(ObjInstance *inst) {
 }
 
 int ObjFunction::arity() {
-    const int param_count = static_cast<int>(declaration->params.size());
-    const int block_count = declaration->blocks.has_value() ? static_cast<int>(declaration->blocks->size()) : 0;
-    return param_count + block_count;
+    int required_param_count = 0;
+    for (const FunctionStmt::Parameter &param : declaration->params) {
+        if (param.is_variadic) {
+            break;
+        }
+        ++required_param_count;
+    }
+    return required_param_count;
 }
 
 Value ObjFunction::call(Vm *vm, const std::vector<Value> &args) {
     const auto env = std::make_shared<Environment>(closure);
 
     std::size_t arg_idx = 0;
+    const std::size_t block_count = declaration->blocks.has_value() ? declaration->blocks->size() : 0;
     for (const FunctionStmt::Parameter &param : declaration->params) {
         if (param.is_variadic) {
-
+            const std::size_t variadic_end = args.size() >= block_count ? args.size() - block_count : 0;
+            std::vector<Value> variadic_elements;
+            while (arg_idx < variadic_end) {
+                variadic_elements.push_back(args[arg_idx++]);
+            }
+            env->define(param.name.literal.lexeme, Value::object(std::make_shared<Variadic>(variadic_elements)));
         } else {
             env->define(param.name.literal.lexeme, args[arg_idx++]);
         }
@@ -360,3 +371,41 @@ Value ObjError::index(const Value &key) {
 
 Variadic::Variadic(std::vector<Value> elements)
     : Obj(ObjType::Variadic), elements(std::move(elements)) {}
+
+bool Variadic::operator==(const Obj &other) {
+    if (other.get_type() != ObjType::Variadic) {
+        return false;
+    }
+
+    const auto &variadic = static_cast<const Variadic &>(other);
+    return elements == variadic.elements;
+}
+
+void Variadic::print(std::ostream &os) {
+    os << "[";
+    for (size_t i = 0; i < elements.size(); ++i) {
+        elements[i].print(os);
+        if (i < elements.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << "]";
+}
+
+Value Variadic::index(const Value &key) {
+    if (key.type != ValueType::Number) {
+        throw TypeError("Variadic index must be a number.");
+    }
+
+    const double index_d = key.as.number;
+    if (std::floor(index_d) != index_d) {
+        throw IndexError("Variadic index must be an integer.");
+    }
+
+    const int index = static_cast<int>(index_d);
+    if (index < 0 || index >= static_cast<int>(elements.size())) {
+        throw IndexError("Variadic index out of bounds.");
+    }
+
+    return elements[index];
+}

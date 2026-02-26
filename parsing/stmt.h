@@ -244,10 +244,10 @@ public:
 
 class DefStmt : public Stmt {
 public:
-    DefStmt(Token name, std::vector<Token> params, std::vector<StmtPtr> body, bool isStatic)
+    DefStmt(Token name, std::vector<FunctionStmt::Parameter> params, std::vector<StmtPtr> body, bool isStatic)
         : new_keyword(std::move(name)), params(std::move(params)), body(std::move(body)) {}
     
-    DefStmt(Token name, std::vector<Token> params, std::vector<BlockLiteral> blocks, std::vector<StmtPtr> body, bool isStatic)
+    DefStmt(Token name, std::vector<FunctionStmt::Parameter> params, std::vector<BlockLiteral> blocks, std::vector<StmtPtr> body, bool isStatic)
         : new_keyword(std::move(name)), params(std::move(params)), blocks{std::move(blocks)}, body(std::move(body)) {}
 
     Value accept(AVisitor *visitor) override {
@@ -255,7 +255,7 @@ public:
     }
 
     Token new_keyword;
-    std::vector<Token> params;
+    std::vector<FunctionStmt::Parameter> params;
     std::optional<std::vector<BlockLiteral>> blocks;
     std::vector<StmtPtr> body;
 };

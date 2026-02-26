@@ -1,0 +1,25 @@
+fn collect(label, ...args) {
+    log('label: ' + label);
+    log('all args:');
+    log(args);
+
+    log('first arg:');
+    log(args[0]);
+
+    log('third arg:');
+    log(args[2]);
+}
+
+fn empty_tail(head, ...tail) {
+    log('head:');
+    log(head);
+    log('tail:');
+    log(tail);
+}
+
+fn main() {
+    log('== variadic functions ==');
+
+    collect('nums', 10, 20, 30, 40);
+    empty_tail('only-one');
+}

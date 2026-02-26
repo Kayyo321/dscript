@@ -834,24 +834,39 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 		}
 
 		const std::size_t param_count = function->declaration->params.size();
+		std::size_t regular_param_count = param_count;
+		bool has_variadic_param = false;
+		for (std::size_t i = 0; i < param_count; ++i) {
+			if (function->declaration->params[i].is_variadic) {
+				has_variadic_param = true;
+				regular_param_count = i;
+				break;
+			}
+		}
 		const std::size_t block_count = function->declaration->blocks.has_value() ? function->declaration->blocks->size() : 0;
-		const std::size_t required_total = param_count;
-		const std::size_t max_total = param_count + block_count;
+		const std::size_t required_total = regular_param_count;
+		const std::size_t max_total = has_variadic_param ? static_cast<std::size_t>(-1) : (regular_param_count + block_count);
 
 		if (positional_arguments.size() < required_total || positional_arguments.size() > max_total) {
 			throw ArityError("Argument count mismatch.", expr->paren.file_pos);
 		}
 
-		for (std::size_t i = 0; i < param_count; ++i) {
+		const std::size_t extra_after_regular = positional_arguments.size() - regular_param_count;
+		const std::size_t positional_block_count = has_variadic_param
+			? std::min(block_count, extra_after_regular)
+			: (positional_arguments.size() - regular_param_count);
+		const std::size_t variadic_count = has_variadic_param ? (extra_after_regular - positional_block_count) : 0;
+
+		for (std::size_t i = 0; i < regular_param_count; ++i) {
 			const ExprPtr &argument = positional_arguments[i];
-			if (function->declaration->params[i].type == TokenType::ExprIdentifier) {
+			if (function->declaration->params[i].name.type == TokenType::ExprIdentifier) {
 				if (std::dynamic_pointer_cast<FunctionExpr>(argument) != nullptr) {
 					args.push_back(evaluate(argument));
 				} else {
 					const Token literal_name{TokenType::Identifier, "<expr-literal>", FilePos{}};
 					std::vector<StmtPtr> body;
 					body.push_back(std::make_shared<ExpressionStmt>(argument));
-					const auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<Token>{}, body, false);
+					const auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<FunctionStmt::Parameter>{}, body, false);
 					args.push_back(Value::object(ObjFunction::basic(declaration, environment)));
 				}
 			} else {
@@ -859,11 +874,17 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 			}
 		}
 
+		if (has_variadic_param) {
+			for (std::size_t i = 0; i < variadic_count; ++i) {
+				args.push_back(evaluate(positional_arguments[regular_param_count + i]));
+			}
+		}
+
 		if (block_count > 0) {
 			std::vector<Value> resolved_blocks(block_count, Value::none());
-			std::size_t positional_block_idx = param_count;
+			std::size_t positional_block_idx = regular_param_count + variadic_count;
 
-			for (std::size_t i = 0; i < block_count && positional_block_idx < positional_arguments.size(); ++i, ++positional_block_idx) {
+			for (std::size_t i = 0; i < positional_block_count && positional_block_idx < positional_arguments.size(); ++i, ++positional_block_idx) {
 				resolved_blocks[i] = evaluate(positional_arguments[positional_block_idx]);
 			}
 
@@ -912,7 +933,7 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 
 Value Vm::visit_function_expr(FunctionExpr *expr) {
 	const Token literal_name{TokenType::Identifier, "<literal>", FilePos{}};
-	auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<Token>{}, expr->body, false);
+	auto declaration = std::make_shared<FunctionStmt>(literal_name, std::vector<FunctionStmt::Parameter>{}, expr->body, false);
 	return Value::object(ObjFunction::basic(declaration, environment));
 }
 

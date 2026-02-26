@@ -70,7 +70,6 @@ private:
 
     void resolve(const StmtPtr &statement);
     void resolve(const ExprPtr &expression);
-    void resolve_function(const std::vector<Token> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, FunctionType type);
     void resolve_function(const std::vector<FunctionStmt::Parameter> &params, const std::optional<std::vector<BlockLiteral>> &blocks, const std::vector<StmtPtr> &body, FunctionType type);
 
     void begin_scope();
