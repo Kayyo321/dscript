@@ -216,6 +216,43 @@ void Vm::set_source(std::string path) {
 	}
 }
 
+void Vm::register_precompiled_module(
+	std::string module_id,
+	std::vector<StmtPtr> statements,
+	std::unordered_map<const Expr *, int> resolved_locals,
+	std::unordered_map<std::string, std::string> import_map,
+	std::string source_path_hint
+) {
+	precompiled_modules.insert_or_assign(module_id, PrecompiledModule{
+		std::move(statements),
+		std::move(resolved_locals),
+		std::move(import_map),
+		std::move(source_path_hint),
+	});
+}
+
+void Vm::clear_precompiled_modules() {
+	precompiled_modules.clear();
+	precompiled_module_stack.clear();
+}
+
+std::optional<std::string> Vm::resolve_precompiled_import_id(const std::string &raw_path) const {
+	if (const auto direct = precompiled_modules.find(raw_path); direct != precompiled_modules.end()) {
+		return direct->first;
+	}
+
+	if (!precompiled_module_stack.empty()) {
+		const std::string &current_module_id = precompiled_module_stack.back();
+		if (const auto current = precompiled_modules.find(current_module_id); current != precompiled_modules.end()) {
+			if (const auto mapped = current->second.import_map.find(raw_path); mapped != current->second.import_map.end()) {
+				return mapped->second;
+			}
+		}
+	}
+
+	return std::nullopt;
+}
+
 std::string Vm::resolve_module_path(const std::string &raw_path) const {
 	namespace fs = std::filesystem;
 	fs::path import_path(raw_path);
@@ -263,6 +300,84 @@ std::shared_ptr<ObjModule> Vm::load_stdlib_module(const std::string &name, const
 std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const FilePos &location) {
 	if (get_stdlib_registry().find(raw_path) != get_stdlib_registry().end()) {
 		return load_stdlib_module(raw_path, location);
+	}
+
+	if (const auto precompiled_module_id = resolve_precompiled_import_id(raw_path); precompiled_module_id.has_value()) {
+		const std::string cache_key = "pre:" + precompiled_module_id.value();
+		if (const auto it = module_cache.find(cache_key); it != module_cache.end()) {
+			return it->second;
+		}
+
+		if (loading_modules.find(cache_key) != loading_modules.end()) {
+			throw CallError("Circular import detected for module '" + precompiled_module_id.value() + "'.", location);
+		}
+
+		const auto module_it = precompiled_modules.find(precompiled_module_id.value());
+		if (module_it == precompiled_modules.end()) {
+			throw NameError("Unknown precompiled module '" + precompiled_module_id.value() + "'.", location);
+		}
+
+		loading_modules.insert(cache_key);
+
+		const std::string previous_source_path = source_path;
+		const std::vector<std::string> previous_source_lines = source_lines;
+		const auto previous_environment = environment;
+		const auto previous_locals = locals;
+		auto previous_exports = active_module_exports;
+
+		try {
+			for (const auto &[expr, depth] : module_it->second.resolved_locals) {
+				locals.insert_or_assign(expr, depth);
+			}
+
+			source_path = module_it->second.source_path_hint.empty()
+				? precompiled_module_id.value()
+				: module_it->second.source_path_hint;
+			source_lines.clear();
+			if (!module_it->second.source_path_hint.empty()) {
+				try {
+					source_lines = read_module_lines(module_it->second.source_path_hint);
+					source_lines_by_path.insert_or_assign(module_it->second.source_path_hint, source_lines);
+				} catch (...) {
+					source_lines.clear();
+				}
+			}
+
+			auto module_env = std::make_shared<Environment>(globals);
+			environment = module_env;
+
+			std::unordered_map<std::string, Value> exports;
+			active_module_exports = &exports;
+			precompiled_module_stack.push_back(precompiled_module_id.value());
+
+			for (const auto &statement : module_it->second.statements) {
+				execute(statement);
+			}
+
+			precompiled_module_stack.pop_back();
+
+			auto module = std::make_shared<ObjModule>(source_path, exports);
+			module_cache.insert_or_assign(cache_key, module);
+
+			environment = previous_environment;
+			source_path = previous_source_path;
+			source_lines = previous_source_lines;
+			active_module_exports = previous_exports;
+			loading_modules.erase(cache_key);
+
+			return module;
+		} catch (...) {
+			if (!precompiled_module_stack.empty() && precompiled_module_stack.back() == precompiled_module_id.value()) {
+				precompiled_module_stack.pop_back();
+			}
+			environment = previous_environment;
+			locals = previous_locals;
+			source_path = previous_source_path;
+			source_lines = previous_source_lines;
+			active_module_exports = previous_exports;
+			loading_modules.erase(cache_key);
+			throw;
+		}
 	}
 
 	const std::string resolved_path = resolve_module_path(raw_path);

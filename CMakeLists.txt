@@ -4,6 +4,12 @@ project(dscript)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(dscript main.cpp
+        app/cli.h
+        app/cli.cpp
+        app/artifact_loader.h
+        app/artifact_loader.cpp
+        app/json_builder.h
+        app/json_builder.cpp
         lexing/token.h
         lexing/token.cpp
         lexing/lexer.h

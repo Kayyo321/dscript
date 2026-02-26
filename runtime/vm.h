@@ -6,6 +6,7 @@
 #define DSCRIPT_VM_H
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <unordered_map>
 #include <vector>
@@ -26,6 +27,14 @@ public:
 	void execute_block(const std::vector<StmtPtr> &statements, const std::shared_ptr<Environment> &environment);
 	void set_locals(const std::unordered_map<const Expr *, int> &resolved_locals);
 	void set_source(std::string path);
+	void register_precompiled_module(
+		std::string module_id,
+		std::vector<StmtPtr> statements,
+		std::unordered_map<const Expr *, int> resolved_locals,
+		std::unordered_map<std::string, std::string> import_map,
+		std::string source_path_hint
+	);
+	void clear_precompiled_modules();
 	bool invoke_main_if_present();
 
 	Value visit_block_stmt(BlockStmt *stmt) override;
@@ -69,6 +78,7 @@ private:
 	void execute(const StmtPtr &stmt);
 	std::shared_ptr<ObjModule> load_module(const std::string &raw_path, const FilePos &location);
 	std::shared_ptr<ObjModule> load_stdlib_module(const std::string &name, const FilePos &location);
+	std::optional<std::string> resolve_precompiled_import_id(const std::string &raw_path) const;
 	std::string resolve_module_path(const std::string &raw_path) const;
 	std::vector<std::string> read_module_lines(const std::string &path) const;
 	Value lookup_variable(const Token &name, const Expr *expr) const;
@@ -89,6 +99,14 @@ private:
 	std::unordered_map<std::string, std::vector<std::string>> source_lines_by_path;
 	std::unordered_map<std::string, std::shared_ptr<ObjModule>> module_cache;
 	std::set<std::string> loading_modules;
+	struct PrecompiledModule {
+		std::vector<StmtPtr> statements;
+		std::unordered_map<const Expr *, int> resolved_locals;
+		std::unordered_map<std::string, std::string> import_map;
+		std::string source_path_hint;
+	};
+	std::unordered_map<std::string, PrecompiledModule> precompiled_modules;
+	std::vector<std::string> precompiled_module_stack;
 	std::unordered_map<std::string, Value> *active_module_exports{nullptr};
 };
 
