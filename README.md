@@ -13,10 +13,13 @@ A small, expressive scripting language in C++ focused on personalization.
 
 ```bash
 ./build.sh
+# run a normal .dsr script directly
 ./build/dscript --run examples/18_def_keyword_showcase.dsr
 ```
 
 ## CLI
+
+`--run` works for both source scripts and built artifacts.
 
 `dscript` supports these modes:
 
@@ -26,6 +29,12 @@ A small, expressive scripting language in C++ focused on personalization.
 ./build/dscript --build <entry_script> [artifact_path]
 ./build/dscript --help
 ./build/dscript --version
+```
+
+Run a script directly:
+
+```bash
+./build/dscript --run examples/01_literals_and_ops.dsr
 ```
 
 Backward-compatible script invocation still works:
