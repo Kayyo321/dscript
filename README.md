@@ -34,13 +34,13 @@ Backward-compatible script invocation still works:
 ./build/dscript examples/18_def_keyword_showcase.dsr
 ```
 
-## Build artifacts (`.dsr.json`)
+## Build artifacts (`.dsar`)
 
 `--build` resolves modules and emits a self-contained JSON artifact that can be run on another system without source files.
 
 Default output naming:
 
-- Input `foo.dsr` -> output `foo.dsr.json`
+- Input `foo.dsr` -> output `foo.dsar`
 - You can override with an explicit `artifact_path`
 
 Typical flow:
@@ -50,7 +50,7 @@ Typical flow:
 ./build/dscript --build examples/23_imports_and_modules.dsr
 
 # Run artifact
-./build/dscript --run examples/23_imports_and_modules.dsr.json
+./build/dscript --run examples/23_imports_and_modules.dsar
 ```
 
 Artifact contents include:
