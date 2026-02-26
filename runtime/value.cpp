@@ -5,6 +5,7 @@
 #include "value.h"
 
 #include <cmath>
+#include <iomanip>
 #include <limits>
 #include <ostream>
 
@@ -62,7 +63,7 @@ void Value::print(std::ostream &os) const {
             double int_part;
 
             if (const double fractional_part = std::modf(as.number, &int_part); std::fabs(fractional_part) < std::numeric_limits<double>::epsilon()) {
-                os << static_cast<int>(int_part);
+                os << std::fixed << std::setprecision(0) << as.number;
             } else {
                 os << as.number;
             }

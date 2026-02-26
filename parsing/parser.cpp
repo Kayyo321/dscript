@@ -65,6 +65,10 @@ private:
             return std::make_shared<BlockStmt>(parse_block_statements());
         }
 
+        if (StmtPtr multi_assign = parse_multi_assign_stmt_if_present()) {
+            return multi_assign;
+        }
+
         return parse_expression_stmt();
     }
 
@@ -572,6 +576,77 @@ private:
         return std::make_shared<ReturnStmt>(keyword, values);
     }
 
+    StmtPtr parse_multi_assign_stmt_if_present() {
+        const std::size_t start = current;
+
+        if (!check(TokenType::Identifier)) {
+            return nullptr;
+        }
+
+        std::vector<Token> names;
+        names.push_back(advance());
+
+        if (!match(TokenType::Comma)) {
+            current = start;
+            return nullptr;
+        }
+
+        do {
+            if (!check(TokenType::Identifier)) {
+                current = start;
+                return nullptr;
+            }
+            names.push_back(advance());
+        } while (match(TokenType::Comma));
+
+        if (!match(TokenType::Equals)) {
+            current = start;
+            return nullptr;
+        }
+
+        std::vector<ExprPtr> values;
+        values.push_back(parse_expression());
+        while (match(TokenType::Comma)) {
+            values.push_back(parse_expression());
+        }
+        match(TokenType::Semicolon);
+
+        if (values.size() != 1 && values.size() != names.size()) {
+            throw ParseError("Multi-assignment expects one source value or one value per target.");
+        }
+
+        std::vector<StmtPtr> statements;
+        statements.reserve(values.size() + names.size());
+
+        std::vector<Token> temp_names;
+        temp_names.reserve(values.size());
+
+        for (std::size_t i = 0; i < values.size(); ++i) {
+            const std::string temp_name = "__multi_assign_tmp_" + std::to_string(multi_assign_counter++) + "_" + std::to_string(i);
+            Token temp_token{TokenType::Identifier, temp_name, names[0].file_pos};
+            temp_names.push_back(temp_token);
+            statements.push_back(std::make_shared<LetStmt>(temp_token, temp_token, values[i]));
+        }
+
+        if (values.size() == 1) {
+            const ExprPtr source = std::make_shared<VariableExpr>(temp_names[0]);
+            for (std::size_t i = 0; i < names.size(); ++i) {
+                const Token index_token{static_cast<double>(i), names[i].file_pos};
+                const ExprPtr index_expr = std::make_shared<LiteralExpr>(Value::number(index_token.literal.number));
+                const Token bracket_token{TokenType::LeftBracket, names[i].file_pos};
+                const ExprPtr indexed = std::make_shared<IndexExpr>(source, bracket_token, index_expr);
+                statements.push_back(std::make_shared<ExpressionStmt>(std::make_shared<AssignExpr>(names[i], indexed)));
+            }
+        } else {
+            for (std::size_t i = 0; i < names.size(); ++i) {
+                const ExprPtr value_expr = std::make_shared<VariableExpr>(temp_names[i]);
+                statements.push_back(std::make_shared<ExpressionStmt>(std::make_shared<AssignExpr>(names[i], value_expr)));
+            }
+        }
+
+        return std::make_shared<BlockStmt>(statements);
+    }
+
     StmtPtr parse_expression_stmt() {
         ExprPtr expression = parse_expression();
         match(TokenType::Semicolon);
@@ -938,6 +1013,7 @@ private:
 
     std::vector<Token> tokens{};
     std::size_t current{0};
+    std::size_t multi_assign_counter{0};
     bool allow_implicit_call{true};
     bool allow_trailing_call_block{true};
 };
