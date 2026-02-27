@@ -81,9 +81,7 @@ fn render_frame(a, b, width, height, footer, chars, depth, i_sin, i_cos, j_sin, 
 
 					if ni < 0 then {
 						ni = 0;
-					}
-
-					if ni > 11 then {
+					} else if ni > 11 then {
 						ni = 11;
 					}
 
