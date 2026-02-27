@@ -438,6 +438,16 @@ Value JsonAstBuilder::visit_set_expr(SetExpr *expr) {
     return Value::none();
 }
 
+Value JsonAstBuilder::visit_set_index_expr(SetIndexExpr *expr) {
+    const std::size_t expr_id = current_expr_id_;
+    current_json_ = "{\"type\":\"SetIndexExpr\",\"id\":" + std::to_string(expr_id) +
+                    ",\"obj\":" + serialize_expr(expr->obj) +
+                    ",\"bracket\":" + serialize_token(expr->bracket) +
+                    ",\"key\":" + serialize_expr(expr->key) +
+                    ",\"value\":" + serialize_expr(expr->value) + "}";
+    return Value::none();
+}
+
 Value JsonAstBuilder::visit_super_expr(SuperExpr *expr) {
     const std::size_t expr_id = current_expr_id_;
     current_json_ = "{\"type\":\"SuperExpr\",\"id\":" + std::to_string(expr_id) +

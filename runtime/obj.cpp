@@ -23,3 +23,14 @@ Value Obj::index(const Value &key){
     
     throw IndexError(ss.str());
 }
+
+Value Obj::set_index(const Value &key, const Value &value) {
+    (void) key;
+    (void) value;
+
+    std::stringstream ss{"object '"};
+    this->print(ss);
+    ss << "' does not support index assignment.";
+
+    throw IndexError(ss.str());
+}

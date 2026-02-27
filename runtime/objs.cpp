@@ -345,6 +345,25 @@ Value List::index(const Value &key) {
     return elements[index];
 }
 
+Value List::set_index(const Value &key, const Value &value) {
+    if (key.type != ValueType::Number) {
+        throw TypeError("List index must be a number.");
+    }
+
+    const double index_d = key.as.number;
+    if (std::floor(index_d) != index_d) {
+        throw IndexError("List index must be an integer.");
+    }
+
+    const int index = static_cast<int>(index_d);
+    if (index < 0 || index >= static_cast<int>(elements.size())) {
+        throw IndexError("List index out of bounds.");
+    }
+
+    elements[index] = value;
+    return value;
+}
+
 ObjModule::ObjModule(std::string path, std::unordered_map<std::string, Value> exports)
     : Obj(ObjType::Module), path(std::move(path)), exports(std::move(exports)) {}
 

@@ -137,6 +137,7 @@ public:
     bool operator==(const Obj &other) override;
     void print(std::ostream &os) override;
     Value index(const Value &key) override;
+    Value set_index(const Value &key, const Value &value) override;
 
     std::vector<Value> elements;
 };

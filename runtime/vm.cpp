@@ -1265,6 +1265,17 @@ Value Vm::visit_set_expr(SetExpr *expr) {
 	return value;
 }
 
+Value Vm::visit_set_index_expr(SetIndexExpr *expr) {
+	const Value obj = evaluate(expr->obj);
+	if (obj.type != ValueType::Object) {
+		throw TypeError("Only objects are index-assignable.", expr->bracket.file_pos);
+	}
+
+	const Value key = evaluate(expr->key);
+	const Value value = evaluate(expr->value);
+	return obj.as.object->set_index(key, value);
+}
+
 Value Vm::visit_super_expr(SuperExpr *expr) {
 	const auto super_it = locals.find(expr);
 	if (super_it == locals.end()) {

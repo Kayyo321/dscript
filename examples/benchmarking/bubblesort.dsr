@@ -1,0 +1,36 @@
+import random as r;
+
+fn make_arr(SIZE) {
+    let arr = [];
+
+    for (let i = 0; i < SIZE; ++i) do {
+        append(arr, r.randint(1, 10000));
+    }
+
+    return arr;
+}
+
+fn main() {
+    let SIZE = 1000;
+
+    let arr = make_arr(SIZE);
+    
+    let n = length(arr);
+    for (let i = 0; i < n; ++i) do {
+        for (let j = 0; j < (n - i - 1); ++j) do {
+            if arr[j] > arr[j + 1] then {
+                arr[j], arr[j + 1] = arr[j + 1], arr[j];
+            }
+        }
+    }
+
+    log "done! [";
+
+    for (let i = 0; i < SIZE; i += 100) {
+        log "\t" + to_string(arr[i]) + ",";    
+    }
+
+    log "\t" + to_string(arr[length(arr)-1]);
+
+    log "]";
+}

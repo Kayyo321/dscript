@@ -1,0 +1,23 @@
+import random as random;
+
+fn main() {
+    log('== stdlib random ==');
+
+    //random.seed(42);
+
+    log('random.random() in [0, 1]:');
+    log(random.random());
+
+    log('random.uniform(10, 20):');
+    log(random.uniform(10, 20));
+
+    log('random.randint(1, 6):');
+    log(random.randint(1, 6));
+
+    let items = ['red', 'green', 'blue'];
+    log('random.choice(list):');
+    log(random.choice(items));
+
+    log('random.choice(string):');
+    log(random.choice('dscript'));
+}

@@ -271,6 +271,13 @@ Value Resolver::visit_set_expr(SetExpr *expr) {
     return Value::none();
 }
 
+Value Resolver::visit_set_index_expr(SetIndexExpr *expr) {
+    resolve(expr->value);
+    resolve(expr->obj);
+    resolve(expr->key);
+    return Value::none();
+}
+
 Value Resolver::visit_super_expr(SuperExpr *expr) {
     if (current_class == ClassType::None) {
         error_at(expr->keyword, "Cannot use 'super' outside of a class.");

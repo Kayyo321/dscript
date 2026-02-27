@@ -32,6 +32,7 @@ add_executable(dscript main.cpp
         runtime/vm.cpp
         runtime/stdlibs/core.cpp
         runtime/stdlibs/io.cpp
+        runtime/stdlibs/random.cpp
         runtime/stdlibs/registry.cpp
         runtime/klass.h
         resolving/resolver.h

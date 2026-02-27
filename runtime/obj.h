@@ -31,6 +31,7 @@ public:
     virtual bool operator==(const Obj &other) = 0;
     virtual void print(std::ostream &os);
     virtual Value index(const Value &key);
+    virtual Value set_index(const Value &key, const Value &value);
 
 private:
     ObjType type;

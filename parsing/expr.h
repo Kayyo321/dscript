@@ -180,6 +180,22 @@ public:
 };
 
 
+class SetIndexExpr : public Expr {
+public:
+    SetIndexExpr(ExprPtr obj, Token bracket, ExprPtr key, ExprPtr value)
+        : obj(std::move(obj)), bracket(std::move(bracket)), key(std::move(key)), value(std::move(value)) {}
+
+    Value accept(AVisitor *visitor) override {
+        return visitor->visit_set_index_expr(this);
+    }
+
+    ExprPtr obj;
+    Token bracket;
+    ExprPtr key;
+    ExprPtr value;
+};
+
+
 class SuperExpr : public Expr {
 public:
     SuperExpr(Token keyword, Token method)

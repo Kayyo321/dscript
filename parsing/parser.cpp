@@ -583,8 +583,8 @@ private:
             return nullptr;
         }
 
-        std::vector<Token> names;
-        names.push_back(advance());
+        std::vector<ExprPtr> targets;
+        targets.push_back(parse_call());
 
         if (!match(TokenType::Comma)) {
             current = start;
@@ -596,7 +596,7 @@ private:
                 current = start;
                 return nullptr;
             }
-            names.push_back(advance());
+            targets.push_back(parse_call());
         } while (match(TokenType::Comma));
 
         if (!match(TokenType::Equals)) {
@@ -611,36 +611,58 @@ private:
         }
         match(TokenType::Semicolon);
 
-        if (values.size() != 1 && values.size() != names.size()) {
+        if (values.size() != 1 && values.size() != targets.size()) {
             throw ParseError("Multi-assignment expects one source value or one value per target.");
         }
 
         std::vector<StmtPtr> statements;
-        statements.reserve(values.size() + names.size());
+        statements.reserve(values.size() + targets.size());
 
         std::vector<Token> temp_names;
         temp_names.reserve(values.size());
 
         for (std::size_t i = 0; i < values.size(); ++i) {
             const std::string temp_name = "__multi_assign_tmp_" + std::to_string(multi_assign_counter++) + "_" + std::to_string(i);
-            Token temp_token{TokenType::Identifier, temp_name, names[0].file_pos};
+            Token temp_token{TokenType::Identifier, temp_name, tokens[start].file_pos};
             temp_names.push_back(temp_token);
             statements.push_back(std::make_shared<LetStmt>(temp_token, temp_token, values[i]));
         }
 
         if (values.size() == 1) {
             const ExprPtr source = std::make_shared<VariableExpr>(temp_names[0]);
-            for (std::size_t i = 0; i < names.size(); ++i) {
-                const Token index_token{static_cast<double>(i), names[i].file_pos};
+            for (std::size_t i = 0; i < targets.size(); ++i) {
+                const Token index_token{static_cast<double>(i), tokens[start].file_pos};
                 const ExprPtr index_expr = std::make_shared<LiteralExpr>(Value::number(index_token.literal.number));
-                const Token bracket_token{TokenType::LeftBracket, names[i].file_pos};
+                const Token bracket_token{TokenType::LeftBracket, tokens[start].file_pos};
                 const ExprPtr indexed = std::make_shared<IndexExpr>(source, bracket_token, index_expr);
-                statements.push_back(std::make_shared<ExpressionStmt>(std::make_shared<AssignExpr>(names[i], indexed)));
+                ExprPtr assignment;
+                if (const auto variable = std::dynamic_pointer_cast<VariableExpr>(targets[i]); variable != nullptr) {
+                    assignment = std::make_shared<AssignExpr>(variable->name, indexed);
+                } else if (const auto get = std::dynamic_pointer_cast<GetExpr>(targets[i]); get != nullptr) {
+                    assignment = std::make_shared<SetExpr>(get->obj, get->name, indexed);
+                } else if (const auto index = std::dynamic_pointer_cast<IndexExpr>(targets[i]); index != nullptr) {
+                    assignment = std::make_shared<SetIndexExpr>(index->obj, index->bracket, index->key, indexed);
+                } else {
+                    throw ParseError("Invalid assignment target.");
+                }
+
+                statements.push_back(std::make_shared<ExpressionStmt>(assignment));
             }
         } else {
-            for (std::size_t i = 0; i < names.size(); ++i) {
+            for (std::size_t i = 0; i < targets.size(); ++i) {
                 const ExprPtr value_expr = std::make_shared<VariableExpr>(temp_names[i]);
-                statements.push_back(std::make_shared<ExpressionStmt>(std::make_shared<AssignExpr>(names[i], value_expr)));
+                ExprPtr assignment;
+                if (const auto variable = std::dynamic_pointer_cast<VariableExpr>(targets[i]); variable != nullptr) {
+                    assignment = std::make_shared<AssignExpr>(variable->name, value_expr);
+                } else if (const auto get = std::dynamic_pointer_cast<GetExpr>(targets[i]); get != nullptr) {
+                    assignment = std::make_shared<SetExpr>(get->obj, get->name, value_expr);
+                } else if (const auto index = std::dynamic_pointer_cast<IndexExpr>(targets[i]); index != nullptr) {
+                    assignment = std::make_shared<SetIndexExpr>(index->obj, index->bracket, index->key, value_expr);
+                } else {
+                    throw ParseError("Invalid assignment target.");
+                }
+
+                statements.push_back(std::make_shared<ExpressionStmt>(assignment));
             }
         }
 
@@ -739,6 +761,10 @@ private:
 
             if (auto get = std::dynamic_pointer_cast<GetExpr>(expr)) {
                 return std::make_shared<SetExpr>(get->obj, get->name, value);
+            }
+
+            if (auto index = std::dynamic_pointer_cast<IndexExpr>(expr)) {
+                return std::make_shared<SetIndexExpr>(index->obj, index->bracket, index->key, value);
             }
 
             throw ParseError("Invalid assignment target.");

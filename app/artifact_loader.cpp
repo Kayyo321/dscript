@@ -522,6 +522,13 @@ public:
                 decode_token(expect_key(object, "name", "SetExpr")),
                 decode_expr(expect_key(object, "value", "SetExpr"))
             );
+        } else if (type == "SetIndexExpr") {
+            expr = std::make_shared<SetIndexExpr>(
+                decode_expr(expect_key(object, "obj", "SetIndexExpr")),
+                decode_token(expect_key(object, "bracket", "SetIndexExpr")),
+                decode_expr(expect_key(object, "key", "SetIndexExpr")),
+                decode_expr(expect_key(object, "value", "SetIndexExpr"))
+            );
         } else if (type == "SuperExpr") {
             expr = std::make_shared<SuperExpr>(
                 decode_token(expect_key(object, "keyword", "SuperExpr")),

@@ -44,6 +44,7 @@ public:
     Value visit_literal_expr(LiteralExpr *expr) override;
     Value visit_logical_expr(LogicalExpr *expr) override;
     Value visit_set_expr(SetExpr *expr) override;
+    Value visit_set_index_expr(SetIndexExpr *expr) override;
     Value visit_super_expr(SuperExpr *expr) override;
     Value visit_self_expr(SelfExpr *expr) override;
     Value visit_unary_expr(UnaryExpr *expr) override;

@@ -37,6 +37,7 @@ class GroupingExpr;
 class LiteralExpr;
 class LogicalExpr;
 class SetExpr;
+class SetIndexExpr;
 class SuperExpr;
 class SelfExpr;
 class UnaryExpr;
@@ -77,6 +78,7 @@ public:
     virtual Value visit_literal_expr(LiteralExpr *expr) = 0;
     virtual Value visit_logical_expr(LogicalExpr *expr) = 0;
     virtual Value visit_set_expr(SetExpr *expr) = 0;
+    virtual Value visit_set_index_expr(SetIndexExpr *expr) = 0;
     virtual Value visit_super_expr(SuperExpr *expr) = 0;
     virtual Value visit_self_expr(SelfExpr *expr) = 0;
     virtual Value visit_unary_expr(UnaryExpr *expr) = 0;
