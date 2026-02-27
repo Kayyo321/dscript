@@ -1,0 +1,28 @@
+import math as m;
+
+fn main() {
+    log('== stdlib math ==');
+
+    log('constants:');
+    log('pi=' + to_string(m.pi) + ', tau=' + to_string(m.tau) + ', e=' + to_string(m.e));
+
+    let x = m.deg2rad(30);
+    log('sin(30deg)=' + to_string(m.sin(x)));
+    log('cos(30deg)=' + to_string(m.cos(x)));
+    log('tan(30deg)=' + to_string(m.tan(x)));
+
+    log('sqrt(2)=' + to_string(m.sqrt(2)));
+    log('pow(2, 10)=' + to_string(m.pow(2, 10)));
+    log('log(e)=' + to_string(m.log(m.e)));
+
+    log('rounding:');
+    log('floor(3.9)=' + to_string(m.floor(3.9)));
+    log('ceil(3.1)=' + to_string(m.ceil(3.1)));
+    log('round(3.5)=' + to_string(m.round(3.5)));
+    log('trunc(-3.9)=' + to_string(m.trunc(-3.9)));
+
+    log('helpers:');
+    log('clamp(15, 0, 10)=' + to_string(m.clamp(15, 0, 10)));
+    log('is_finite(pi)=' + to_string(m.is_finite(m.pi)));
+    log('rad2deg(pi/2)=' + to_string(m.rad2deg(m.pi / 2)));
+}

@@ -167,6 +167,7 @@ class Reader {
 - Artifact imports: `examples/31_artifact_imports.dsr` (build `examples/lib/math.dsr` to `examples/lib/math.dsar` first)
 - Stdlib I/O: `examples/24_stdlib_io.dsr`
 - Stdlib random: `examples/32_stdlib_random.dsr`
+- Stdlib math: `examples/33_stdlib_math.dsr`
 
 ## Build options
 

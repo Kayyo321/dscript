@@ -1,0 +1,142 @@
+import math as m;
+
+fn build_trig_table(step) {
+	let sins = [];
+	let coss = [];
+	let angle = 0;
+
+	while angle < m.tau do {
+		append(sins, m.sin(angle));
+		append(coss, m.cos(angle));
+		angle += step;
+	}
+
+	return sins, coss;
+}
+
+fn make_frame_buffers(size) {
+	let chars = [];
+	let depth = [];
+
+	for (let i = 0; i < size; ++i) do {
+		append(chars, ' ');
+		append(depth, 0);
+	}
+
+	return chars, depth;
+}
+
+fn clear_frame_buffers(chars, depth, size) {
+	for (let i = 0; i < size; ++i) do {
+		chars[i] = ' ';
+		depth[i] = 0;
+	}
+}
+
+fn render_frame(a, b, width, height, footer, chars, depth, i_sin, i_cos, j_sin, j_cos) {
+	let size = width * height;
+	let shades = '.,-~:;=!*#$@';
+	let i_len = length(i_sin);
+	let j_len = length(j_sin);
+	let x_center = width / 2;
+	let y_center = height / 2;
+	let x_scale = width * 0.375;
+	let y_scale = height * 0.68;
+
+	clear_frame_buffers(chars, depth, size);
+
+	let sin_a = m.sin(a);
+	let cos_a = m.cos(a);
+	let sin_b = m.sin(b);
+	let cos_b = m.cos(b);
+
+	for (let j_idx = 0; j_idx < j_len; ++j_idx) do {
+		let sin_j = j_sin[j_idx];
+		let cos_j = j_cos[j_idx];
+		let h = cos_j + 2;
+		let sin_j_cos_a = sin_j * cos_a;
+		let sin_j_sin_a = sin_j * sin_a;
+
+		for (let i_idx = 0; i_idx < i_len; ++i_idx) do {
+			let sin_i = i_sin[i_idx];
+			let cos_i = i_cos[i_idx];
+			let sin_i_h = sin_i * h;
+			let cos_i_h = cos_i * h;
+
+			let d = 1 / (sin_i_h * sin_a + sin_j_cos_a + 5);
+			let t = sin_i_h * cos_a - sin_j_sin_a;
+
+			let x = x_center + x_scale * d * (cos_i_h * cos_b - t * sin_b);
+			let y = y_center + y_scale * d * (cos_i_h * sin_b + t * cos_b);
+			let xi = m.trunc(x);
+			let yi = m.trunc(y);
+
+			if yi >= 0 and yi < height and xi >= 0 and xi < width then {
+				let o = xi + width * yi;
+				let n = 8 * ((sin_j * sin_a - sin_i * cos_j * cos_a) * cos_b - sin_i * cos_j * sin_a - sin_j * cos_a - cos_i * cos_j * sin_b);
+				let ni = m.trunc(n);
+
+				if d > depth[o] then {
+					depth[o] = d;
+
+					if ni < 0 then {
+						ni = 0;
+					}
+
+					if ni > 11 then {
+						ni = 11;
+					}
+
+					chars[o] = shades[ni];
+				}
+			}
+		}
+	}
+
+	let out = '\x1b[H';
+	for (let row = 0; row < height; ++row) do {
+		let row_base = row * width;
+		for (let col = 0; col < width; ++col) do {
+			out = append(out, chars[row_base + col]);
+		}
+		out = append(out, '\n');
+	}
+
+	out = append(out, footer);
+	out = append(out, '\n');
+	out = append(out, 'ctrl+c to quit');
+
+	return out;
+}
+
+fn main() {
+	let a = 0;
+	let b = 0;
+	let width = 64;
+	let height = 20;
+	let size = width * height;
+	let footer = 'donut.c in dscript!!! Its slow as heck but you gotta admit... its kinda cool';
+
+	let i_step = 0.08;
+	let j_step = 0.16;
+
+	let i_sin, i_cos = build_trig_table(i_step);
+	let j_sin, j_cos = build_trig_table(j_step);
+	let chars, depth = make_frame_buffers(size);
+
+	log('\x1b[2J');
+
+	do {
+		log(render_frame(a, b, width, height, footer, chars, depth, i_sin, i_cos, j_sin, j_cos));
+		a += 0.04;
+		b += 0.02;
+
+		if a > m.tau then {
+			a -= m.tau;
+		}
+
+		if b > m.tau then {
+			b -= m.tau;
+		}
+	}
+}

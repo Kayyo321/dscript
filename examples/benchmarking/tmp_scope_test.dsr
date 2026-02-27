@@ -1,8 +1,0 @@
-fn main() {
-    let SIZE = 1000;
-    log('done! [');
-    for (let i = 0; i < SIZE; i += 100) {
-        log(i);
-    }
-    log(']');
-}
