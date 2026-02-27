@@ -1,0 +1,4 @@
+This is the folder for stdlibs that are written in dscript, non c++ 
+(if you want that one, it's in the runtime/stdlib directory). If this is empty, 
+thats okay! You need to run ./build.sh, or build the cmake project your way,
+then it will go through all the dsr/*.dsr files and build them here.
