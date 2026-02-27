@@ -1,0 +1,5 @@
+import io as io;
+
+fn main() {
+    log(io.program_args);
+}

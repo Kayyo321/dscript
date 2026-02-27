@@ -16,6 +16,7 @@
 #include "../lexing/lexer.h"
 #include "../parsing/parser.h"
 #include "../resolving/resolver.h"
+#include "../runtime/stdlibs/io.h"
 #include "../runtime/stdlibs/registry.h"
 #include "../runtime/vm.h"
 
@@ -27,7 +28,7 @@ void print_usage(const std::string &program_name) {
     std::cerr << "Usage:\n";
     std::cerr << "  " << program_name << " --repl\n";
     std::cerr << "  " << program_name << " --build <entry_script> [artifact_path]\n";
-    std::cerr << "  " << program_name << " --run <script_or_artifact>\n";
+    std::cerr << "  " << program_name << " --run <script_or_artifact> [args...]\n";
     std::cerr << "  " << program_name << " --help\n";
     std::cerr << "  " << program_name << " --version\n";
     std::cerr << "\n";
@@ -389,7 +390,7 @@ bool parse_artifact_entry(const std::string &artifact_path, std::string &entry_o
     return false;
 }
 
-bool interpret_script(const std::string &script_path) {
+bool interpret_script(const std::string &script_path, const std::vector<std::string> &program_args) {
     FileLexer lexer(script_path);
     const std::vector<StmtPtr> statements = parse(lexer);
     if (lexer.had_error) {
@@ -406,6 +407,7 @@ bool interpret_script(const std::string &script_path) {
         return false;
     }
 
+    set_io_program_args(program_args);
     Vm vm;
     vm.set_source(script_path);
     vm.set_locals(resolver.get_locals());
@@ -489,7 +491,7 @@ bool build(const std::string &script_path, const std::string &artifact_path) {
     return true;
 }
 
-bool run(const std::string &script_or_artifact_path) {
+bool run(const std::string &script_or_artifact_path, const std::vector<std::string> &program_args) {
     namespace fs = std::filesystem;
 
     std::string script_path = script_or_artifact_path;
@@ -509,6 +511,7 @@ bool run(const std::string &script_or_artifact_path) {
             return false;
         }
 
+        set_io_program_args(program_args);
         Vm vm;
         vm.clear_precompiled_modules();
         for (const auto &[module_id, module] : program.modules) {
@@ -534,14 +537,15 @@ bool run(const std::string &script_or_artifact_path) {
         return false;
     }
 
-    return interpret_script(script_path);
+    return interpret_script(script_path, program_args);
 }
 
 bool switch_on_mode(
     const std::string &program_name,
     const std::string &mode,
     const std::string &script_path,
-    const std::string &artifact_path
+    const std::string &artifact_path,
+    const std::vector<std::string> &program_args
 ) {
     if (mode == "--repl") {
         repl();
@@ -567,7 +571,7 @@ bool switch_on_mode(
             print_usage(program_name);
             return false;
         }
-        return run(script_path);
+        return run(script_path, program_args);
     }
 
     if (mode == "--help") {
@@ -598,8 +602,18 @@ int run_cli(const int argc, char **argv) {
     if (!first_arg.empty() && first_arg[0] == '-') {
         const std::string script_path = argc > 2 ? argv[2] : "";
         const std::string artifact_path = argc > 3 ? argv[3] : "";
-        return switch_on_mode(program_name, first_arg, script_path, artifact_path) ? 0 : 1;
+        std::vector<std::string> program_args;
+        if (first_arg == "--run") {
+            for (int i = 3; i < argc; ++i) {
+                program_args.emplace_back(argv[i]);
+            }
+        }
+        return switch_on_mode(program_name, first_arg, script_path, artifact_path, program_args) ? 0 : 1;
     }
 
-    return run(first_arg) ? 0 : 1;
+    std::vector<std::string> program_args;
+    for (int i = 2; i < argc; ++i) {
+        program_args.emplace_back(argv[i]);
+    }
+    return run(first_arg, program_args) ? 0 : 1;
 }

@@ -25,7 +25,7 @@ A small, expressive scripting language in C++ focused on personalization.
 
 ```bash
 ./build/dscript --repl
-./build/dscript --run <script_or_artifact>
+./build/dscript --run <script_or_artifact> [args...]
 ./build/dscript --build <entry_script> [artifact_path]
 ./build/dscript --help
 ./build/dscript --version
@@ -41,6 +41,9 @@ Backward-compatible script invocation still works:
 
 ```bash
 ./build/dscript examples/18_def_keyword_showcase.dsr
+
+# pass script arguments (available as io.program_args)
+./build/dscript --run examples/18_def_keyword_showcase.dsr one two
 ```
 
 ## Build artifacts (`.dsar`)

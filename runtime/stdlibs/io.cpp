@@ -10,6 +10,25 @@
 #include "../objs.h"
 #include "../throwables.h"
 
+namespace {
+
+std::vector<std::string> current_program_args;
+
+Value io_program_args_value() {
+    std::vector<Value> values;
+    values.reserve(current_program_args.size());
+    for (const auto &arg : current_program_args) {
+        values.push_back(Value::object(std::make_shared<ObjString>(arg)));
+    }
+    return Value::object(std::make_shared<List>(values));
+}
+
+} // namespace
+
+void set_io_program_args(std::vector<std::string> args) {
+    current_program_args = std::move(args);
+}
+
 static std::string expect_string_arg(const std::vector<Value> &args, const std::size_t index, const std::string &fn_name) {
     if (index >= args.size()) {
         throw ArityError(fn_name + "() missing argument.");
@@ -118,6 +137,7 @@ static Value io_list_dir(const std::vector<Value> &args) {
 
 std::unordered_map<std::string, Value> create_io_stdlib() {
     std::unordered_map<std::string, Value> exports;
+    exports.insert_or_assign("program_args", io_program_args_value());
     exports.insert_or_assign("write", Value::object(std::make_shared<ObjNative>(1, io_write)));
     exports.insert_or_assign("input", Value::object(std::make_shared<ObjNative>(1, io_input)));
     exports.insert_or_assign("read_file", Value::object(std::make_shared<ObjNative>(1, io_read_file)));
