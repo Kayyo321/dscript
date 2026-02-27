@@ -27,5 +27,6 @@
   "examples/26_infinite_do_break_continue.dsr",
   "examples/27_length_and_append.dsr",
   "examples/28_variadic_functions.dsr",
-  "examples/32_stdlib_random.dsr"
+  "examples/32_stdlib_random.dsr",
+  "examples/34_stdlib_program_args.dsr"
 ]

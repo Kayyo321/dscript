@@ -1,5 +1,11 @@
 import io as io;
 
 fn main() {
+    log('== stdlib io.program_args ==');
+    log(io.program_args);
+}
+import io as io;
+
+fn main() {
     log(io.program_args);
 }
