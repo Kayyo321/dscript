@@ -1,6 +1,7 @@
-import text as text;
+import fmt as f;
 
 fn main() {
     log('== dscript-authored stdlib ==');
-    log(text.shout('hello'));
+    log(f.format('hi there, {}!', 'Sully'));
+    f.println('good to see ya, {}!', 'Brian');
 }

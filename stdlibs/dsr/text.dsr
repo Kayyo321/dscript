@@ -1,7 +1,0 @@
-export fn shout(value) {
-    return value + '!';
-}
-
-export fn with_prefix(prefix, value) {
-    return prefix + ': ' + value;
-}

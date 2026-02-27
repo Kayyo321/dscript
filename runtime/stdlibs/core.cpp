@@ -27,7 +27,7 @@ static Value native_length(const std::vector<Value> &args) {
 
     const Value &value = args[0];
     if (value.type != ValueType::Object) {
-        throw TypeError("length() expects a string or list.");
+        throw TypeError("length() expects a string, list, or variadic.");
     }
 
     if (value.as.object->get_type() == ObjType::String) {
@@ -40,7 +40,12 @@ static Value native_length(const std::vector<Value> &args) {
         return Value::number(static_cast<double>(list->elements.size()));
     }
 
-    throw TypeError("length() expects a string or list.");
+    if (value.as.object->get_type() == ObjType::Variadic) {
+        const auto variadic = std::static_pointer_cast<Variadic>(value.as.object);
+        return Value::number(static_cast<double>(variadic->elements.size()));
+    }
+
+    throw TypeError("length() expects a string, list, or variadic.");
 }
 
 static Value native_append(const std::vector<Value> &args) {

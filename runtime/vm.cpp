@@ -1178,7 +1178,7 @@ Value Vm::visit_call_expr(CallExpr *expr) {
 
 		const std::size_t extra_after_regular = positional_arguments.size() - regular_param_count;
 		const std::size_t positional_block_count = has_variadic_param
-			? std::min(block_count, extra_after_regular)
+			? 0
 			: (positional_arguments.size() - regular_param_count);
 		const std::size_t variadic_count = has_variadic_param ? (extra_after_regular - positional_block_count) : 0;
 

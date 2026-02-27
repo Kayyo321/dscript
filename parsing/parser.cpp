@@ -950,6 +950,20 @@ private:
                     args.push_back(parse_call_argument());
                 }
 
+                if (const auto existing_call = std::dynamic_pointer_cast<CallExpr>(expr);
+                    existing_call != nullptr && existing_call->paren.file_pos.line_no == expr_line) {
+                    existing_call->arguments.insert(existing_call->arguments.end(), args.begin(), args.end());
+
+                    if (allow_trailing_call_block && match(TokenType::LeftBrace)) {
+                        existing_call->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));
+                        expr = existing_call;
+                        break;
+                    }
+
+                    expr = existing_call;
+                    continue;
+                }
+
                 auto call_expr = std::make_shared<CallExpr>(expr, previous(), args);
                 if (allow_trailing_call_block && match(TokenType::LeftBrace)) {
                     call_expr->arguments.push_back(std::make_shared<FunctionExpr>(parse_block_statements()));

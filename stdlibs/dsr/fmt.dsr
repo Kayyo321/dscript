@@ -1,0 +1,126 @@
+import io as std_input_output;
+
+export class StringBuilder {
+    (ss) // private field
+
+    fn init(ss) = def; // default constructor
+
+    fn clear() {
+        self.ss = '';
+    }
+
+    fn add(s) {
+        self.ss = append(self.ss, s);
+    }
+
+    fn get() {
+        return self.ss;
+    }
+}
+
+def private_format(fmt, variadic_literal) (if_fmt_err: $fail) {
+    let sb = StringBuilder('');
+
+    let next_arg_idx = 0;
+    let fmt_len = length(fmt);
+
+    def fail_format() {
+        if if_fmt_err is not none then {
+            if_fmt_err();
+        }
+        return none;
+    }
+
+    def parse_digit_char(ch) {
+        if ch == '0' then return 0;
+        if ch == '1' then return 1;
+        if ch == '2' then return 2;
+        if ch == '3' then return 3;
+        if ch == '4' then return 4;
+        if ch == '5' then return 5;
+        if ch == '6' then return 6;
+        if ch == '7' then return 7;
+        if ch == '8' then return 8;
+        if ch == '9' then return 9;
+        return none;
+    }
+
+    for (let i = 0; i < fmt_len; ++i) do {
+        if fmt[i] == '{' then {
+            if i + 1 >= fmt_len then {
+                return fail_format();
+            }
+
+            if fmt[i+1] == '}' then {
+                if next_arg_idx >= length(variadic_literal) then {
+                    return fail_format();
+                }
+
+                sb.add(to_string(variadic_literal[next_arg_idx++]));
+                ++i;
+            } else {
+                let j = i + 1;
+                let explicit_idx = 0;
+                let has_any_digit = false;
+
+                while j < fmt_len and fmt[j] != '}' do {
+                    let parsed_digit = parse_digit_char fmt[j];
+                    if parsed_digit is none then {
+                        return fail_format();
+                    }
+
+                    has_any_digit = true;
+                    explicit_idx = explicit_idx * 10 + parsed_digit;
+                    ++j;
+                }
+
+                if j >= fmt_len or not has_any_digit then {
+                    return fail_format();
+                }
+
+                if explicit_idx < 0 or explicit_idx >= length(variadic_literal) then {
+                    return fail_format();
+                }
+
+                sb.add(to_string(variadic_literal[explicit_idx]));
+                i = j;
+            }
+        } else if fmt[i] == '\\' and i + 1 < fmt_len and (fmt[i+1] == '{' or fmt[i+1] == '}' or fmt[i+1] == '\\') then {
+            sb.add(fmt[i+1]);
+            ++i;
+        } else {
+            sb.add(fmt[i]);
+        }
+    }
+
+    return sb.get();
+}
+
+export fn format(fmt, ...args) (if_err: $fail) {
+    let formatted = private_format fmt, args if_fmt_err: {
+        if if_err is not none then if_err();
+        return none;
+    };
+
+    return formatted;
+}
+
+export fn print(fmt, ...args) (if_err: $fail) {
+    let formatted = private_format fmt, args if_fmt_err: {
+        if if_err is not none then if_err();
+        return;
+    };
+    if formatted is none then return;
+
+    std_input_output.write(formatted);
+}
+
+export fn println(fmt, ...args) (if_err: $fail) {
+    let formatted = private_format fmt, args if_fmt_err: {
+        if if_err is not none then if_err();
+        return;
+    };
+    if formatted is none then return;
+
+    std_input_output.write(formatted + '\n');
+}
