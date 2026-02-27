@@ -82,8 +82,10 @@ private:
 	void execute(const StmtPtr &stmt);
 	std::shared_ptr<ObjModule> load_module(const std::string &raw_path, const FilePos &location);
 	std::shared_ptr<ObjModule> load_stdlib_module(const std::string &name, const FilePos &location);
+	std::shared_ptr<ObjModule> load_namespaced_stdlib_module(const std::string &raw_path, const FilePos &location);
 	std::string ensure_artifact_registered(const std::string &artifact_path, const FilePos &location);
 	std::optional<std::string> resolve_precompiled_import_id(const std::string &raw_path) const;
+	std::optional<std::string> resolve_dscript_stdlib_path(const std::string &name) const;
 	std::string resolve_module_path(const std::string &raw_path) const;
 	std::vector<std::string> read_module_lines(const std::string &path) const;
 	Value lookup_variable(const Token &name, const Expr *expr) const;

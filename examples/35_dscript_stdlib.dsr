@@ -1,0 +1,6 @@
+import text as text;
+
+fn main() {
+    log('== dscript-authored stdlib ==');
+    log(text.shout('hello'));
+}

@@ -26,6 +26,35 @@ bool has_artifact_extension(const std::string &path) {
 		std::char_traits<char>::length(ArtifactExtension), ArtifactExtension) == 0;
 }
 
+bool has_std_namespace_prefix(const std::string &path) {
+	return path.rfind("std:", 0) == 0;
+}
+
+bool is_bare_module_import(const std::string &path) {
+	if (path.empty()) {
+		return false;
+	}
+
+	if (has_std_namespace_prefix(path)) {
+		return false;
+	}
+
+	if (path.find('/') != std::string::npos || path.find('\\') != std::string::npos) {
+		return false;
+	}
+
+	const std::filesystem::path as_path(path);
+	if (as_path.is_absolute()) {
+		return false;
+	}
+
+	if (as_path.has_extension()) {
+		return false;
+	}
+
+	return true;
+}
+
 } // namespace
 
 static const char *kind_to_string(const RuntimeErrorKind kind) {
@@ -351,9 +380,84 @@ std::shared_ptr<ObjModule> Vm::load_stdlib_module(const std::string &name, const
 	return module;
 }
 
+std::optional<std::string> Vm::resolve_dscript_stdlib_path(const std::string &name) const {
+	namespace fs = std::filesystem;
+
+	if (name.empty()) {
+		return std::nullopt;
+	}
+
+	const fs::path stdlib_source_root = fs::current_path() / "stdlibs" / "dsr";
+	const fs::path stdlib_artifact_root = fs::current_path() / "stdlibs" / "dsar";
+	const fs::path requested(name);
+
+	if (requested.extension() == ".dsr" || requested.extension() == ArtifactExtension) {
+		const fs::path candidate = (requested.extension() == ".dsr")
+			? (stdlib_source_root / requested)
+			: (stdlib_artifact_root / requested);
+		if (fs::exists(candidate)) {
+			return fs::weakly_canonical(candidate).string();
+		}
+		return std::nullopt;
+	}
+
+	const fs::path source_candidate = stdlib_source_root / (name + ".dsr");
+	if (fs::exists(source_candidate)) {
+		return fs::weakly_canonical(source_candidate).string();
+	}
+
+	const fs::path artifact_candidate = stdlib_artifact_root / (name + ArtifactExtension);
+	if (fs::exists(artifact_candidate)) {
+		return fs::weakly_canonical(artifact_candidate).string();
+	}
+
+	return std::nullopt;
+}
+
+std::shared_ptr<ObjModule> Vm::load_namespaced_stdlib_module(const std::string &raw_path, const FilePos &location) {
+	const std::string stdlib_name = raw_path.substr(4);
+	if (stdlib_name.empty()) {
+		throw NameError("Expected stdlib name after 'std:'.", location);
+	}
+
+	if (const auto it = module_cache.find(raw_path); it != module_cache.end()) {
+		return it->second;
+	}
+
+	if (const auto dscript_stdlib_path = resolve_dscript_stdlib_path(stdlib_name); dscript_stdlib_path.has_value()) {
+		auto module = load_module(dscript_stdlib_path.value(), location);
+		module_cache.insert_or_assign(raw_path, module);
+		return module;
+	}
+
+	if (get_stdlib_registry().find(stdlib_name) != get_stdlib_registry().end()) {
+		auto module = load_stdlib_module(stdlib_name, location);
+		module_cache.insert_or_assign(raw_path, module);
+		return module;
+	}
+
+	throw NameError("Unknown stdlib module '" + stdlib_name + "'.", location);
+}
+
 std::shared_ptr<ObjModule> Vm::load_module(const std::string &raw_path, const FilePos &location) {
+	if (has_std_namespace_prefix(raw_path)) {
+		return load_namespaced_stdlib_module(raw_path, location);
+	}
+
 	if (get_stdlib_registry().find(raw_path) != get_stdlib_registry().end()) {
 		return load_stdlib_module(raw_path, location);
+	}
+
+	if (is_bare_module_import(raw_path)) {
+		if (const auto cached = module_cache.find(raw_path); cached != module_cache.end()) {
+			return cached->second;
+		}
+
+		if (const auto dscript_stdlib_path = resolve_dscript_stdlib_path(raw_path); dscript_stdlib_path.has_value()) {
+			auto module = load_module(dscript_stdlib_path.value(), location);
+			module_cache.insert_or_assign(raw_path, module);
+			return module;
+		}
 	}
 
 	if (const auto precompiled_module_id = resolve_precompiled_import_id(raw_path); precompiled_module_id.has_value()) {

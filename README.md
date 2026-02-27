@@ -171,6 +171,29 @@ class Reader {
 - Stdlib I/O: `examples/24_stdlib_io.dsr`
 - Stdlib random: `examples/32_stdlib_random.dsr`
 - Stdlib math: `examples/33_stdlib_math.dsr`
+- DScript stdlib authoring: `examples/35_dscript_stdlib.dsr`
+
+## Write stdlibs in dscript
+
+You can author stdlibs in dscript and import them by module name.
+
+- Place DScript stdlib sources under `./stdlibs/dsr/`
+- Build artifacts are emitted under `./stdlibs/dsar/`
+- Import by name, for example: `import text as text;`
+- Runtime lookup for `import name`:
+    1. Native stdlib named `name`
+    2. `./stdlibs/dsr/name.dsr`
+    3. `./stdlibs/dsar/name.dsar`
+- `import 'std:name' as mod;` is also supported and uses the same DScript stdlib lookup.
+
+This keeps native stdlibs (`io`, `math`, etc.) working while allowing dscript-authored stdlibs.
+
+Folder split for clarity:
+- C++ stdlibs live in `./runtime/stdlibs/`
+- DScript stdlib sources live in `./stdlibs/dsr/`
+- DScript stdlib artifacts live in `./stdlibs/dsar/`
+
+During CMake builds, all `./stdlibs/dsr/*.dsr` modules are precompiled to `./stdlibs/dsar/*.dsar`. If any precompile step fails, the build fails.
 
 ## Build options
 
