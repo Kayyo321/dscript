@@ -45,7 +45,6 @@ static std::string expect_string_arg(const std::vector<Value> &args, const std::
 static Value io_write(const std::vector<Value> &args) {
     const std::string content = expect_string_arg(args, 0, "io.write");
     std::cout << content;
-    std::cout.flush();
     return Value::boolean(true);
 }
 
